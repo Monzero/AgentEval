@@ -1,0 +1,247 @@
+run_time_stamp,company,category,que_no,score,justification
+2025-02-26 21:33:36,PCJEWELLER,1,4,2,"All directors' appointment dates are within the last five years, so none of them can be considered permanent. The report explicitly states that there is **no mention** that any board member belongs to a lender group (Page 2). Therefore, based on the provided information, all directors can be classified as non-permanent board members."
+2025-02-26 21:33:43,PCJEWELLER,1,7,2,"The gap between the FYE (March 31, 2024) and the last AGM (September 30, 2023) is approximately 6 months, which falls within the range of less than 120 days. This score of 2 is given as the gap is well below the threshold of 180 days. The calculation for the gap was done by subtracting the FYE date from the AGM scheduled date, and the result was 6 months, indicating a very short period between the two events."
+2025-02-26 21:33:56,PCJEWELLER,1,10,0,"I could not make judgement, however content is : Yes, PC Jeweller Limited has a policy addressing conflict of interest, specifically within its ""Code of Conduct for Directors and Senior Management,"" as found on the company website.  
+
+Section 4.2, ""Conflict of Interest,"" states that Directors and Senior Management ""shall not engage in any business, activity or relationship, which may be in conflict with the interest of the Company.""  The policy mandates disclosure to the Board if such a situation arises.  It also prohibits the exploitation of corporate property, information, or position for personal gain without Board disclosure and approval.
+
+However, the provided document does *not* explicitly detail policies regarding board cross-linkages or interlocking directorates.  While the Code of Conduct establishes a framework for ethical conduct, it does not address the specifics of potential conflicts arising from directors serving on multiple boards, potentially impacting related companies.  Therefore, based solely on the provided ""Code of Conduct for Directors and Senior Management"" document, the existence of a specific policy addressing board cross-linkages cannot be confirmed.
+
+Based on the provided text from PC Jeweller Limited's ""Nomination & Remuneration Policy,"" there's no explicit statement strictly prohibiting an executive director from serving on the Nomination and Remuneration Committee.  The document does not address this specific restriction.
+
+Yes, according to the Corporate Governance report (page 3), as of December 31st, 2024, the Nomination and Remuneration Committee includes one executive director, Balram Garg.  There is no information in this report about non-independent directors in this committee.The provided text is a corporate governance report for PC Jeweller LTD.  as of December 31st, 2024, not March 31st, 2024.
+
+The Nomination and Remuneration Committee, according to the report's Annexure 1,  had the following members as of December 31st, 2024:
+
+* **Sannovanda Machaiah Swathi:** Non-Executive Independent Director (Chairperson)
+* **Mahesh Agarwal:** Non-Executive Independent Director
+* **Farangi Lal Kansal:** Non-Executive Independent Director
+
+Therefore, as of December 31st, 2024,  **no non-independent directors** served on the Nomination and Remuneration Committee.  The report does not contain information for March 31st, 2024.
+
+Based on the provided text extracted from PC Jeweller Limited's website, there is no explicit policy that strictly prohibits executive directors from serving on the Audit Committee.  However, the ""Nomination & Remuneration Policy"" mentions the composition of the Audit Committee, stating that only Independent Directors will approve Related Party Transactions.  This suggests that while executive directors may be *part* of the Audit Committee, their approval of such transactions is restricted.  More information would be needed to definitively answer the question.
+
+Yes, the corporate governance report for PC Jeweller Ltd. as of December 31, 2024 (Page 3) shows that Balram Garg, an Executive Director, is a member of the Audit Committee.  There is no mention of any non-independent director.
+Yes, please attempt to find an answer using the revised query:  ""Does the company have any non-independent members on its Audit Committee?"" using the provided text.
+That's a correct interpretation of the provided text from page 3 of PC Jeweller Ltd.'s corporate governance report.  The report clearly states that the Audit Committee consists only of independent directors.
+
+Based on my analysis of the provided PC Jeweller Limited Annual Report (as of 31 March 2024), there is no explicit mention of direct linkages between key management personnel or board members and key suppliers or vendors.
+
+The report does contain a section (Note 37, Related Party Transactions, pages 119-126) detailing transactions with related parties.  However, this section focuses on financial relationships with subsidiaries and certain individuals (identified as Key Management Personnel and Directors).  It doesn't directly show relationships with external suppliers or vendors.  While some related parties might indirectly be involved in the supply chain, there's no information provided to confirm such linkages.
+
+Based on my analysis of the provided PC Jeweller Limited Annual Report (as of 31st March 2024), there is no mention of any linkages between key management personnel or board members and competitors.  The report does not disclose any such relationships.
+"
+2025-02-26 21:34:02,PCJEWELLER,1,12,2,"Since the total amount of royalty transactions is 0, a comparison with the company's profit (a net loss of ₹629.36 crores) is trivial; 0 is significantly less than the net loss."
+2025-02-26 21:34:10,PCJEWELLER,1,16,2,"Based on the Annual Report of PC Jeweller Limited as of 31st March 2024, there is no evidence that suggests a structure or mechanism could violate minority stakeholders' rights. The report clearly outlines the shareholding pattern (page 65) and details of subsidiaries (pages 11, 19). Additionally, it provides information on cross-entity holdings (page 19, Annexure 1), but there's no indication of complicated structures or indirect holdings that would disproportionately increase promoter voting power. Overall, the report appears transparent in its disclosure of ownership structure, which does not give an impression of being opaque to the extent that the ultimate beneficiary cannot be fully determined."
+2025-02-26 21:34:21,PCJEWELLER,2,18,2,"The company has publicly disclosed its health and safety policies, including the Business Responsibility Policy which outlines its commitment to providing a safe and healthy working environment (page 9). Although specific preventative measures are not explicitly mentioned, the policy demonstrates a proactive approach to reviewing and improving processes to minimize risks to employee health and safety. Additionally, the policy mentions policies in place such as the 'Whistle Blower Policy' and 'Policy against Sexual Harassment' which indirectly suggest the existence of trainings. While there is no explicit mention of extending health, safety, and welfare initiatives to suppliers and vendors, the Business Responsibility Policy does consider stakeholders' interests, including those of suppliers/vendors."
+2025-02-26 21:34:27,PCJEWELLER,2,19,1,"The company has publicly disclosed its prevention of sexual harassment policy, which outlines procedures for making a 'Protected Disclosure' and assures protection from reprisals. Although it does not mention any specific incidents of sexual harassment, it provides information on the number of complaints received (none) during the year under review. The annual report (page 13) specifically states that the company has adopted a policy against sexual harassment and has constituted an Internal Complaints Committee for redressal of complaints. Reference: Annual Report (Page 13)"
+2025-02-26 21:34:37,PCJEWELLER,2,20,1,"Although PC Jeweller Limited does not have dedicated policies specifically titled 'Supplier/Vendor Selection Policy' or 'Supplier/Vendor Management Policy', it's acknowledged that the company has indirect references to supplier relations in its Business Responsibility Policy (Source: PC Jeweller Limited's Business Responsibility Policy). The policy mentions the Company's commitment to ethical conduct and fair dealing with stakeholders, which implies a commitment to responsible supplier relationships. However, no explicit supplier selection or management details are given, indicating that policies for both supplier/contractor management and selection are not available. Therefore, I score this as 1, as policies are available for one aspect (supplier relations) but not the other."
+2025-02-26 21:34:47,PCJEWELLER,2,21,0,"Yes, the auditor's report and notes to the financial statements for PC Jeweller Limited as of 31 March 2024 indicate delayed repayments to lenders, creditors, and suppliers. The report explicitly states that the company is contesting this classification in legal proceedings. There is evidence of delayed payments to lenders (Page 11) and creditors and suppliers (Page 105, Page 130, Page 178)."
+2025-02-26 21:35:08,PCJEWELLER,2,22,0,"I could not make judgement, however content is : Yes, PC Jeweller Limited demonstrates a strong commitment to ethical practices and is clearly anti-corruption and anti-bribery, as evidenced in its policies extracted from the company website.  Specifically, the **Code of Conduct for Directors and Senior Management** states:
+
+""The Company have a zero tolerance for bribery and corruption in its business dealings. The employees of the Company shall not, directly or indirectly, solicit or accept any commission or any form of benefit arising out of a transaction involving the Company which might be extended at times to influence business decisions. Any offer or grant of gift customary and / or are of a commemorative nature is not covered under the Policy.""
+
+This explicitly outlines a zero-tolerance policy towards bribery and corruption and is further reinforced by other sections emphasizing honesty, integrity, and responsible conduct.  The commitment is not merely stated but is woven into various sections of the Code of Conduct, highlighting its importance to the company.
+
+Yes, several policies from PC Jeweller Limited's website address ethics, core values, and ethical standards expected from employees and directors.
+
+Specifically:
+
+* **Code of Conduct for Directors and Senior Management:** This policy explicitly outlines the expected ethical behavior.  It emphasizes honesty, fairness, ethical conduct, integrity, responsibility, and accountability from directors and senior management.  It also addresses conflicts of interest, confidentiality, and insider trading.
+
+* **Business Responsibility Policy:** This policy highlights the company's commitment to ethical conduct and transparency.  It states that the company maintains the highest standards of ethics, strives for ethical conduct at all levels, and has policies like the Whistle Blower Policy and Code of Conduct in place to ensure ethical behavior.  This policy also details the company's commitment to good corporate governance and compliance with laws and regulations.
+
+
+Therefore, both the ""Code of Conduct for Directors and Senior Management"" and the ""Business Responsibility Policy"" detail PC Jeweller Limited's commitment to ethical standards and the expected behavior of its directors and employees.
+
+Yes, the **PC Jeweller Limited Code of Conduct for Directors and Senior Management** policy, sourced from the company website, addresses conflict of interest.  Specifically, section 4.2 states:
+
+
+""The Directors and Senior Management shall not engage in any business, activity or relationship, which may be in conflict with the interest of the Company. If such a situation arises then the Directors and Senior Management shall act in the best interest of the Company with proper disclosure to the Board.
+
+The Directors and Senior Management shall not exploit for their own personal gains, business opportunities that are discovered through use of corporate property, information or position, unless such opportunity is disclosed to the Board and the Board declines to pursue the same for the Company.""
+
+Yes, several policies from PC Jeweller Limited's website address interactions with third parties:
+
+**1. Code of Conduct for Directors and Senior Management:**  This policy, under section 4.2 (Conflict of Interest), states that Directors and Senior Management ""shall not engage in any business, activity or relationship, which may be in conflict with the interest of the Company.""  It also addresses the use of confidential information acquired through their position in the Company, stating that it should not be used to benefit themselves or third parties. This section outlines the expected behavior with regards to dealings with third parties (customers, suppliers, etc).
+
+**2. Code of Practices and Procedures for Fair Disclosure of Unpublished Price Sensitive Information:** This policy addresses communication with analysts and research personnel in relation to price sensitive information,  requiring that such information not be shared selectively with third parties. It further stresses the need for prompt and uniform public disclosure of price sensitive information to prevent selective disclosures to certain third parties.
+
+**3. Policy on Materiality of and Dealing with Related Party Transactions:** This policy focuses specifically on the interaction between PC Jeweller and its related parties, however, this still involves third parties and sets forth parameters and guidelines on the approval procedures for all transactions with related parties.
+
+**4. Corporate Social Responsibility Policy:** This policy explicitly mentions the Company's interactions with various third parties as stakeholders, including  employees, customers, and the wider community. It outlines the Company's commitment to responsible conduct with these third parties through specific initiatives and guidelines.
+
+
+These policies, found on PC Jeweller Limited's website, demonstrate the company's commitment to responsible conduct in its dealings with various types of third parties.
+
+Yes, several policies from PC Jeweller Limited's website mention compliance with applicable laws and regulations.  Here are some examples:
+
+
+* **Code of Conduct for Directors and Senior Management:** Section 4.5 explicitly states, ""The Directors and Senior Management shall comply with all the laws, rules and regulations, as may be applicable from time to time. The Directors and Senior Management shall also comply with the codes and policies of the Company, to the extent applicable to them.""
+
+* **Code of Practices and Procedures for Fair Disclosure of Unpublished Price Sensitive Information:** This policy is created in compliance with SEBI (Prohibition of Insider Trading) Regulations, 2015 and explicitly states that it includes policies for determining legitimate purposes for information sharing.  Compliance with these regulations is implied throughout the document.
+
+* **Policy on Material Subsidiaries:** This policy references compliance with Regulation 16 and Regulation 24 of the SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015, demonstrating a commitment to legal compliance.
+
+* **Corporate Social Responsibility Policy:** This policy complies with Section 135 of the Companies Act, 2013, and the Rules made thereunder.  It is explicitly stated that the policy is framed to ensure that the company is a responsible corporate citizen of India.
+
+* **Nomination & Remuneration Policy:** This policy explicitly states that it's framed in accordance with Section 178 of the Companies Act, 2013, and the SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015.  This shows a clear commitment to following the law in setting compensation and nominating directors.
+
+* **Policy for Determination of Materiality of Events or Information:** This policy is framed in accordance with Regulation 30 of the Securities and Exchange Board of India (Listing Obligations and Disclosure Requirements) Regulations, 2015.
+
+* **Policy on Materiality of and Dealing with Related Party Transactions:** This policy complies with the requirements of SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015 and the Companies Act, 2013.
+
+In summary, PC Jeweller Limited demonstrates a strong emphasis on compliance with applicable laws and regulations across multiple facets of its operations, as evidenced by the explicit statements and implied adherence within its published policies.
+
+Yes, the PC Jeweller Limited's **Code of Conduct for Directors and Senior Management**, found on their website, addresses the protection of company assets and information management.  Specifically, section 4.7 states:
+
+
+""**4.7) USE OF THE COMPANY'S PROPERTY / ASSETS & THEIR PROTECTION**
+
+The property / assets of the Company shall be used for its business purposes and shall not be used
+for personal gains by the Directors and Senior Management. Incidental personal use, if reasonable,
+will not amount to violation of the Code. The Directors and Senior Management should also take
+measures to protect the Company's property / assets.""
+
+
+Additionally, section 4.3 of the same policy addresses confidentiality of information:
+
+
+""**4.3) CONFIDENTIALITY**
+
+The Directors and Senior Management shall not use, disclose or divulge to a third party, directly or
+indirectly, any confidential information, acquired by them due to their position in the Company, for
+their personal advantage or for the advantage of any other entity. Confidential information includes any
+information relating to the Company's business, customers, suppliers etc., which is not available in
+the public domain.""
+
+
+Therefore, while not explicitly titled ""Asset and Information Management,"" these sections within the Code of Conduct demonstrate PC Jeweller's policies concerning the protection of company assets and the confidential handling of information.
+
+Yes, the **Code of Conduct for Directors and Senior Management** from PC Jeweller Limited's website specifies disciplinary action for non-compliance with the code.  The relevant section (section 5) states:
+
+""**DISCIPLINARY ACTION**
+
+The Directors and Senior Management shall adhere to the Code. The Company will take appropriate disciplinary action for wilful or deliberate non-compliance, if any, of the Code.""
+
+Yes, the **Business Responsibility Policy** from PC Jeweller Limited's website clearly states that the company has zero tolerance for bribery and corruption.
+
+The policy states:
+
+> ""The Company have a zero tolerance for bribery and corruption in its business dealings. The employees of the Company shall not, directly or indirectly, solicit or accept any commission or any form of benefit arising out of a transaction involving the Company which might be extended at times to influence business decisions. Any offer or grant of gift customary and / or are of a commemorative nature is not covered under the Policy.""
+
+
+While the policy doesn't detail specific anti-bribery and anti-corruption measures beyond this statement of zero tolerance,  it does mention the implementation of policies like a Whistle Blower Policy and a Code of Conduct for Directors and Senior Management, which would likely contain further details on these measures.  The policy indicates a commitment to ethical conduct and transparency, which are fundamental components of an effective anti-corruption program.
+
+Based on the provided text extracted from PC Jeweller Limited's website, there is no mention of the company being a signatory to any well-known global anti-corruption framework or code of ethical conduct.  While several policies (e.g., Code of Conduct for Directors and Senior Management, Business Responsibility Policy) address ethical conduct and compliance,  they do not explicitly state adherence to any specific global framework.
+"
+2025-02-26 21:35:14,PCJEWELLER,2,23,2,"The company incurred a net loss of ₹389.60 crore for the financial year ended March 31, 2022, but still spent ₹0.94 crore on CSR activities, which is more than or equal to 0.02 times of their profit (CSR spending / Net Loss) * 100 = (0.94 / 389.60) * 100 = 0.24%. This shows that the company has a strong commitment to social responsibility despite making a loss."
+2025-02-26 21:35:24,PCJEWELLER,3,28,0,"Auditor has issued a qualified opinion. The auditor's report states that their opinion is qualified due to three material uncertainties: (1) discounts to export customers, (2) delays in receiving foreign currency proceeds, and (3) impairment assessment of investments and receivables. This indicates that the auditor has significant concerns about the financial statements, which warrants a score of 0."
+2025-02-26 21:35:33,PCJEWELLER,3,32,2,"PC Jeweller Limited has a comprehensive policy for related party transactions that includes definitions of 'Ordinary Course of Business' and 'Material Related Party Transaction'. The policy defines materiality based on threshold values, including exceeding Rs.1,000 crore or 10% of the annual consolidated turnover, as well as payments exceeding 5% of the company's annual consolidated turnover. However, it does not explicitly require external auditors to review material related party transactions. (Reference: PC Jeweller Limited's 'Policy on Materiality of and Dealing with Related Party Transactions', extracted from their website, p.n.a.)"
+2025-02-26 21:35:39,PCJEWELLER,3,36,1,"The company provides information about the shareholding pattern on page 65 of the annual report, showing the percentage ownership by promoter & promoter group (54.53%) and public shareholding (45.47%). However, the top 10 shareholder names are not explicitly listed in the annual report. Instead, a breakdown of shareholding by category is provided. To obtain a list of the top 10 shareholders, one would need to consult other resources like stock exchange filings."
+2025-02-26 21:35:48,PCJEWELLER,3,37,1,"The shareholding information for Board of Directors is partially disclosed, with only Shri Balram Garg (204,282,100 shares or 43.89% of total shares) and Shri Ramesh Kumar Sharma (132,500 shares or 0.03% of total shares) having their shareholding explicitly listed. However, the information for other board members (Dr. Manohar Lal Singla, Shri Krishan Kumar Khurana, and Smt. Sannovanda Machaiah Swathi) is not available. Similarly, no shareholding information is provided for Key Management Personnel (Shri Sanjeev Bhatia and Shri Vijay Panwar). According to the Annual Report 2023-24, page 110."
+2025-02-26 21:36:10,PCJEWELLER,4,48,2,"The overall attendance ratio for all board members on an average is more than 0.90, as calculated from the provided document (Annual Report 2023-24, page 53) and other reports (PC Jeweller Limited Annual Reports 2022-23, page 47; PC Jeweller Limited Annual Report 2021-22, page 34). The average attendance ratio for the board members who served for at least three years is 100% in all three reports. Including Smt. Sannovanda Machaiah Swathi, the average attendance ratio is 98.33%. Therefore, the overall attendance ratio for all board members on an average is more than 0.90."
+2025-02-26 21:36:15,PCJEWELLER,4,49,2,"Based on the provided information in the PC Jeweller Limited Annual Report as of 31st March 2024, it can be observed that the Board of Directors held six meetings during the year. This exceeds the minimum threshold of four meetings required to achieve a score of 2. As per the report (page 12), the number of board meetings held is explicitly stated to be **six**. Therefore, based on this information, I am scoring this as 2."
+2025-02-26 21:36:23,PCJEWELLER,4,51,2,"The board collectively demonstrates significant expertise in General Management, with multiple directors showing experience exceeding 20 years each. Additionally, at least two directors have over 20 years of industry relevant experience in the jewelry industry, which is the major industry in which the company operates (as mentioned on page 50 of the PC Jeweller Limited Annual Report 2023-24). The board has strong expertise in less than 3 areas, specifically General Management and Industry Relevant Experience. Furthermore, Shri Balram Garg, the Managing Director, has prior working experience in the major industry in which the company operates (page 11)."
+2025-02-26 21:36:29,PCJEWELLER,4,52,1,"The gender ratio of independent board members at PC Jeweller Limited is 25% (1:4), which means that only one out of four independent directors is female, Smt. Sannovanda Machaiah Swathi. This falls under the category of 'less than 0.3' as per our scoring criteria. The source information can be found in the PC Jeweller Limited Annual Report 2023-24, Page 8."
+2025-02-26 21:36:36,PCJEWELLER,4,53,1,"The gender ratio analysis reveals that PC Jeweller Limited has a female to total workforce ratio of 0.39 (241/614). As this falls within the range of 0.1 to 0.3, I am assigning a score of 1. Reference: Annual Report for PC Jeweller Limited as of 31st March 2024, page 30, section IV. Employees, point 20.a."
+2025-02-26 21:36:44,PCJEWELLER,4,54,2,"The company has a Managing Director, Balram Garg, who is also a Promoter, but since more than 66% of the board members are independent directors, the independence of the board is greater than 50%. Additionally, the vintage members affirm their independence, and although there's no specific mention of regular affirmation for them, it can be inferred that they do so. (Page 52) The policy also states that the Director's independence will be reviewed by the Board on an annual basis upon the declarations made by such Independent Director."
+2025-02-26 21:36:51,PCJEWELLER,4,55,1,"Audit committee does not have only independent board members, as stated on page 12 of PC Jeweller Limited Annual Report 2023-24, violating criterion 2. Additionally, the Nomination and Remuneration Committee does not have only non-executive directors as members, violating criterion 2 again. Only one criterion is violated, so score is 1."
+2025-02-26 21:37:01,PCJEWELLER,4,63,0,"The Total compensation of CEO (₹14.35 crore) is more than 0.05 of net profits (₹(649.27) crore). According to the report, page 11 of the Annual Report 2023-24, the Managing Director's remuneration for the year ended March 31, 2024 was ₹14.35 crore. The standalone net loss for the company for the year ended March 31, 2024 was ₹(649.27) crore (Page 10, Annual Report 2023-24). Since the CEO compensation is more than 0.05 of net profits, the score is 0."
+2025-02-26 21:45:06,PCJEWELLER,2,22,0,"I could not make judgement, however content is : Yes, several policies from PC Jeweller Limited's website address interactions with third parties:
+
+**1. Code of Conduct for Directors and Senior Management:**  This policy, under section 4.2 (Conflict of Interest), states that Directors and Senior Management ""shall not engage in any business, activity or relationship, which may be in conflict with the interest of the Company.""  It also addresses the use of confidential information acquired through their position in the Company, stating that it should not be used to benefit themselves or third parties. This section outlines the expected behavior with regards to dealings with third parties (customers, suppliers, etc).
+
+**2. Code of Practices and Procedures for Fair Disclosure of Unpublished Price Sensitive Information:** This policy addresses communication with analysts and research personnel in relation to price sensitive information,  requiring that such information not be shared selectively with third parties. It further stresses the need for prompt and uniform public disclosure of price sensitive information to prevent selective disclosures to certain third parties.
+
+**3. Policy on Materiality of and Dealing with Related Party Transactions:** This policy focuses specifically on the interaction between PC Jeweller and its related parties, however, this still involves third parties and sets forth parameters and guidelines on the approval procedures for all transactions with related parties.
+
+**4. Corporate Social Responsibility Policy:** This policy explicitly mentions the Company's interactions with various third parties as stakeholders, including  employees, customers, and the wider community. It outlines the Company's commitment to responsible conduct with these third parties through specific initiatives and guidelines.
+
+
+These policies, found on PC Jeweller Limited's website, demonstrate the company's commitment to responsible conduct in its dealings with various types of third parties.
+
+Yes, several policies from PC Jeweller Limited's website mention compliance with applicable laws and regulations.  Here are some examples:
+
+
+* **Code of Conduct for Directors and Senior Management:** Section 4.5 explicitly states, ""The Directors and Senior Management shall comply with all the laws, rules and regulations, as may be applicable from time to time. The Directors and Senior Management shall also comply with the codes and policies of the Company, to the extent applicable to them.""
+
+* **Code of Practices and Procedures for Fair Disclosure of Unpublished Price Sensitive Information:** This policy is created in compliance with SEBI (Prohibition of Insider Trading) Regulations, 2015 and explicitly states that it includes policies for determining legitimate purposes for information sharing.  Compliance with these regulations is implied throughout the document.
+
+* **Policy on Material Subsidiaries:** This policy references compliance with Regulation 16 and Regulation 24 of the SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015, demonstrating a commitment to legal compliance.
+
+* **Corporate Social Responsibility Policy:** This policy complies with Section 135 of the Companies Act, 2013, and the Rules made thereunder.  It is explicitly stated that the policy is framed to ensure that the company is a responsible corporate citizen of India.
+
+* **Nomination & Remuneration Policy:** This policy explicitly states that it's framed in accordance with Section 178 of the Companies Act, 2013, and the SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015.  This shows a clear commitment to following the law in setting compensation and nominating directors.
+
+* **Policy for Determination of Materiality of Events or Information:** This policy is framed in accordance with Regulation 30 of the Securities and Exchange Board of India (Listing Obligations and Disclosure Requirements) Regulations, 2015.
+
+* **Policy on Materiality of and Dealing with Related Party Transactions:** This policy complies with the requirements of SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015 and the Companies Act, 2013.
+
+In summary, PC Jeweller Limited demonstrates a strong emphasis on compliance with applicable laws and regulations across multiple facets of its operations, as evidenced by the explicit statements and implied adherence within its published policies.
+
+Yes, the PC Jeweller Limited's **Code of Conduct for Directors and Senior Management**, found on their website, addresses the protection of company assets and information management.  Specifically, section 4.7 states:
+
+
+""**4.7) USE OF THE COMPANY'S PROPERTY / ASSETS & THEIR PROTECTION**
+
+The property / assets of the Company shall be used for its business purposes and shall not be used
+for personal gains by the Directors and Senior Management. Incidental personal use, if reasonable,
+will not amount to violation of the Code. The Directors and Senior Management should also take
+measures to protect the Company's property / assets.""
+
+
+Additionally, section 4.3 of the same policy addresses confidentiality of information:
+
+
+""**4.3) CONFIDENTIALITY**
+
+The Directors and Senior Management shall not use, disclose or divulge to a third party, directly or
+indirectly, any confidential information, acquired by them due to their position in the Company, for
+their personal advantage or for the advantage of any other entity. Confidential information includes any
+information relating to the Company's business, customers, suppliers etc., which is not available in
+the public domain.""
+
+
+Therefore, while not explicitly titled ""Asset and Information Management,"" these sections within the Code of Conduct demonstrate PC Jeweller's policies concerning the protection of company assets and the confidential handling of information.
+
+Yes, the **Code of Conduct for Directors and Senior Management** from PC Jeweller Limited's website specifies disciplinary action for non-compliance with the code.  The relevant section (section 5) states:
+
+""**DISCIPLINARY ACTION**
+
+The Directors and Senior Management shall adhere to the Code. The Company will take appropriate disciplinary action for wilful or deliberate non-compliance, if any, of the Code.""
+
+Yes, the **Business Responsibility Policy** from PC Jeweller Limited's website clearly states that the company has zero tolerance for bribery and corruption.
+
+The policy states:
+
+> ""The Company have a zero tolerance for bribery and corruption in its business dealings. The employees of the Company shall not, directly or indirectly, solicit or accept any commission or any form of benefit arising out of a transaction involving the Company which might be extended at times to influence business decisions. Any offer or grant of gift customary and / or are of a commemorative nature is not covered under the Policy.""
+
+
+While the policy doesn't detail specific anti-bribery and anti-corruption measures beyond this statement of zero tolerance,  it does mention the implementation of policies like a Whistle Blower Policy and a Code of Conduct for Directors and Senior Management, which would likely contain further details on these measures.  The policy indicates a commitment to ethical conduct and transparency, which are fundamental components of an effective anti-corruption program.
+
+Based on the provided text extracted from PC Jeweller Limited's website, there is no mention of the company being a signatory to any well-known global anti-corruption framework or code of ethical conduct.  While several policies (e.g., Code of Conduct for Directors and Senior Management, Business Responsibility Policy) address ethical conduct and compliance,  they do not explicitly state adherence to any specific global framework.
+
+Yes, PC Jeweller Limited demonstrates a commitment to strong ethical practices and is explicitly anti-corruption and anti-bribery in several of its policies, as extracted from its website.
+
+**1. Code of Conduct for Directors and Senior Management:** This policy clearly outlines the expectation of honesty, integrity, responsibility, and accountability from directors and senior management.  It explicitly states that they ""shall not engage in any business, activity or relationship, which may be in conflict with the interest of the Company"" and prohibits exploiting opportunities for personal gain unless disclosed to and approved by the Board. It also addresses confidentiality and prohibits insider trading.  The policy further specifies disciplinary action for non-compliance with the code.
+
+**Quote:**  ""The Directors and Senior Management shall not engage in any business, activity or relationship, which may be in conflict with the interest of the Company...The Directors and Senior Management shall not exploit for their own personal gains, business opportunities that are discovered through use of corporate property, information or position...The Company will take appropriate disciplinary action for wilful or deliberate non-compliance, if any, of the Code.""
+
+**2. Business Responsibility Policy:** This policy reiterates the company's commitment to ethical conduct, stating that it maintains ""highest standards of ethics while conducting business activities"" and aims to ensure ethical behavior at all levels.  It specifically addresses transparency and accountability, emphasizing that disclosures made in business documents must be accurate and correct. The policy also includes sections on conflict of interest and mentions the existence of other related policies that further promote ethics and good governance.
+
+**Quote:**  ""The Company maintains highest standards of ethics while conducting the business activities. The Board of Directors and Senior Management strive and endeavor to set necessary governance structures, procedures and practices to ensure ethical conduct at all levels across the Company...The Company has in place policies like Whistle Blower Policy, Code of Conduct for Directors and Senior Management etc. to ensure ethics and good governance.""
+
+**3. Policy for Determination of Materiality of Events or Information:** While not explicitly an ethics policy, this document contributes to ethical practices by outlining transparent and timely disclosure procedures.  Accurate and complete information is crucial for ethical market behavior.
+
+In summary, PC Jeweller Limited's policies from its website demonstrate a clear commitment to ethical conduct, including measures to prevent bribery and corruption, and establish clear expectations for ethical behavior from its employees, directors, and third parties. The policies also define procedures for dealing with conflicts of interest and include provisions for disciplinary action in cases of ethical breaches.
+
+Yes, the **Business Responsibility Policy** from PC Jeweller Limited's website clearly states that the company has a zero-tolerance policy for bribery and corruption.  It explicitly mentions this in **Principle 1: Ethics, Transparency and Accountability**:
+
+""The Company have a zero tolerance for bribery and corruption in its business dealings. The employees of the Company shall not, directly or indirectly, solicit or accept any commission or any form of benefit arising out of a transaction involving the Company which might be extended at times to influence business decisions. Any offer or grant of gift customary and / or are of a commemorative nature is not covered under the Policy.""
+
+The policy doesn't detail specific anti-bribery and anti-corruption measures beyond this statement of principle.  It emphasizes ethical conduct, transparency, and accountability as the primary mechanisms to prevent such activities.
+
+Based on the provided text extracted from PC Jeweller Limited's website, there is no mention of the company being a signatory to any well-known global anti-corruption framework or code of ethical conduct.  While several policies (Code of Conduct for Directors and Senior Management, Business Responsibility Policy, etc.) address ethical conduct and compliance,  they do not explicitly state adherence to a specific, globally recognized anti-corruption framework.
+"
+2025-02-26 21:46:52,PCJEWELLER,2,22,2,"PC Jeweller Limited demonstrates a commitment to strong ethical practices and is explicitly anti-corruption and anti-bribery in several of its policies. The Code of Conduct for Directors and Senior Management outlines expectations for honesty, integrity, responsibility, and accountability, while the Business Responsibility Policy reiterates the company's commitment to ethical conduct, transparency, and accountability. The policy also defines procedures for dealing with conflicts of interest and includes provisions for disciplinary action in cases of ethical breaches. Additionally, the Business Responsibility Policy explicitly mentions a zero-tolerance policy for bribery and corruption, emphasizing ethical conduct, transparency, and accountability as primary mechanisms to prevent such activities."

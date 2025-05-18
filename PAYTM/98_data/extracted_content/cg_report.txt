@@ -1,0 +1,354 @@
+File: cg_report, Page number: 0
+Section: Corporate Governance
+--- corporate governance ---
+AgentMADS/scrapers/data/scraped/Paytm/corporate governance.png
+
+File: cg_report, Page number: 2
+--- Composition of Committees ---
+[![BSE
+Ltd](https://www.bseindia.com/include/images/transparent.gif)](https://www.bseindia.com/corporates/<https:/www.bseind
+ia.com/>)  
+---  
+Corporate Governance  |  One 97 Communications Ltd  
+---  
+Scrip Code :543396 |  Quarter Ending : December 2024  
+Annexure 1   
+II. Composition of Committees   
+| **Disclosure of notes on composition of committees explanatory**|  -  
+---|---  
+**Audit Committee Details**  
+**Whether the Audit Committee has a Regular Chairperson**| **YES**  
+**Sr**| **DIN Number**| **Name of Committee members**| **Category 1 of directors**| **Category 2 of directors**|
+**Date Of Appointment**| **Date of Cessation**| **Remarks**  
+1| 00361030| Gopalasamudram Srinivasaraghavan Sundararajan| Non-Executive - Independent Director| Chairperson|
+29-08-2022| -| -  
+2| 00013580| Pallavi Shardul Shroff| Non-Executive - Independent Director| Member| 09-02-2018| -| -  
+3| 07984221| Rajeev Krishnamuralilal Agarwal| Non-Executive - Independent Director| Member| 17-06-2024| -| -  
+**Nomination and remuneration committee**  
+**Whether the Nomination and remuneration committee has a Regular Chairperson**| **YES**  
+**Sr**| **DIN Number**| **Name of Committee members**| **Category 1 of directors**| **Category 2 of directors**|
+**Date Of Appointment**| **Date of Cessation**| **Remarks**  
+1| 00766821| Ashit Ranjit Lilani| Non-Executive - Independent Director| Chairperson| 11-07-2021| -| -  
+2| 00253613| Ravi Chandra Adusumalli| Non-Executive - Non Independent Director| Member| 03-02-2023| -| -  
+3| 00013580| Pallavi Shardul Shroff| Non-Executive - Independent Director| Member| 17-06-2024| -| -  
+**Stakeholders Relationship Committee**  
+**Whether the Stakeholders Relationship Committee has a Regular Chairperson**| **YES**  
+**Sr**| **DIN Number**| **Name of Committee members**| **Category 1 of directors**| **Category 2 of directors**|
+**Date Of Appointment**| **Date of Cessation**| **Remarks**  
+1| 07984221| Rajeev Krishnamuralilal Agarwal| Non-Executive - Independent Director| Chairperson| 17-06-2024| -| -  
+2| 00766821| Ashit Ranjit Lilani| Non-Executive - Independent Director| Member| 05-07-2021| -| -  
+
+File: cg_report, Page number: 3
+3| 07720350| Madhur Deora| Executive Director| Member| 03-02-2023| -| -  
+**Risk Management Committee**  
+**Whether the Risk Management Committee has a Regular Chairperson**| **YES**  
+**Sr**| **DIN Number**| **Name of Committee members**| **Category 1 of directors**| **Category 2 of directors**|
+**Date Of Appointment**| **Date of Cessation**| **Remarks**  
+1| 00361030| Gopalasamudram Srinivasaraghavan Sundararajan| Non-Executive - Independent Director| Chairperson|
+29-08-2022| -| -  
+2| 00766821| Ashit Ranjit Lilani| Non-Executive - Independent Director| Member| 05-07-2021| -| -  
+3| 00466521| Vijay Shekhar Sharma| Executive Director| Member| 05-07-2021| -| -  
+4| 07984221| Rajeev Krishnamuralilal Agarwal| Non-Executive - Independent Director| Member| 17-06-2024| -| -  
+**Corporate Social Responsibility Committee**  
+**Whether the Corporate Social Responsibility Committee has a Regular Chairperson**| **YES**  
+**Sr**| **DIN Number**| **Name of Committee members**| **Category 1 of directors**| **Category 2 of directors**|
+**Date Of Appointment**| **Date of Cessation**| **Remarks**  
+1| 00361030| Gopalasamudram Srinivasaraghavan Sundararajan| Non-Executive - Independent Director| Chairperson|
+29-08-2022| -| -  
+2| 00466521| Vijay Shekhar Sharma| Executive Director| Member| 31-03-2015| -| -  
+3| 00253613| Ravi Chandra Adusumalli| Non-Executive - Non Independent Director| Member| 31-03-2015| -| -
+--- Meeting Of Board Of Directors ---
+[![BSE
+Ltd](https://www.bseindia.com/include/images/transparent.gif)](https://www.bseindia.com/corporates/<https:/www.bseind
+ia.com/>)  
+---  
+Corporate Governance  |  One 97 Communications Ltd  
+---  
+Scrip Code :543396 |  Quarter Ending : December 2024  
+Annexure 1   
+III. Meeting Of Board Of Directors   
+| **Disclosure of notes on meeting of board of directors explanatory**|  -  
+---|---  
+Sr| Date(s) of meeting (Enter dates of Previous quarter and Current quarter in chronological order)| Maximum gap
+between any two consecutive(in number of days)| Notes for not providing Date| Whether requirement of Quorum met
+(Yes/No)| Total Number of Directors as on date of the meeting| Number of Directors present*(All directors including
+
+File: cg_report, Page number: 4
+Independent Director)| No. of Independent Directors attending the meeting*  
+1| 19-07-2024| -| -| Yes| 7.00| 6| 3  
+2| 13-08-2024| 24| -| Yes| 7.00| 7| 4  
+3| 21-08-2024| 7| -| Yes| 7.00| 7| 4  
+4| 22-10-2024| 61| -| Yes| 7.00| 7| 4  
+5| 05-12-2024| 43| -| Yes| 7.00| 7| 4
+--- Meeting Of Committees ---
+[![BSE
+Ltd](https://www.bseindia.com/include/images/transparent.gif)](https://www.bseindia.com/corporates/<https:/www.bseind
+ia.com/>)  
+---  
+Corporate Governance  |  One 97 Communications Ltd  
+---  
+Scrip Code :543396 |  Quarter Ending : December 2024  
+Annexure 1   
+IV. Meeting Of Committees   
+| **Disclosure of notes on meeting of committees explanatory**|  -  
+---|---  
+Sr| Name of Committee| EnterDate(s) of meeting (Enter dates of Previous quarter and Current quarter in chronological
+order| Maximum gap between any two consecutive meetings (in number of days)| Name of other committee| Reason for
+not providing date| Whether requirement of Quorum met (details)| Total Number of Directors in the Committee as on
+date of the meeting| Number of Directors Present (All directors including Independent director)| No. of Independent
+Directors attending the meeting*| No. of members attending the meeting (other than Board of Directors)  
+1| Audit Committee| 16 Jul 2024| -| -| -| Yes| 3| 3| 3| 0  
+2| Audit Committee| 19 Jul 2024| 2| -| -| Yes| 3| 3| 3| 0  
+3| Audit Committee| 21 Aug 2024| 32| -| -| Yes| 3| 3| 3| 0  
+4| Audit Committee| 19 Oct 2024| 58| -| -| Yes| 3| 3| 3| 0  
+5| Audit Committee| 22 Oct 2024| 2| -| -| Yes| 3| 3| 3| 0  
+6| Nomination and remuneration committee| 16 Jul 2024| -| -| -| Yes| 3| 2| 2| 0  
+7| Nomination and remuneration committee| 19 Oct 2024| 94| -| -| Yes| 3| 2| 1| 0  
+8| Nomination and remuneration committee| 05 Dec 2024| 46| -| -| Yes| 3| 3| 2| 0  
+9| Stakeholders Relationship Committee| 19 Oct 2024| -| -| -| Yes| 3| 3| 2| 0  
+10| Risk Management Committee| 16 Jul 2024| -| -| -| Yes| 4| 4| 3| 0  
+
+File: cg_report, Page number: 5
+11| Risk Management Committee| 19 Oct 2024| 94| -| -| Yes| 4| 4| 3| 0
+--- Related Party Transactions Overview ---
+[![BSE
+Ltd](https://www.bseindia.com/include/images/transparent.gif)](https://www.bseindia.com/corporates/<https:/www.bseind
+ia.com/>)  
+---  
+Corporate Governance  |  One 97 Communications Ltd  
+---  
+Scrip Code :543396 |  Quarter Ending : December 2024  
+Annexure 1   
+V. Related Party Transactions   
+| Sr| Subject| Compliance status(Yes/No/NA)| If status is "No" details of non-compliance may be given here  
+---|---|---|---  
+1| Whether prior approval of audit committee obtained| Yes| -  
+2| Whether shareholder approval obtained for material RPT| NA| -  
+3| Whether details of RPT entered into pursuant to omnibus approval have been reviewed by audit committee| Yes| -  
+Disclosure of notes on related party transactions| -  
+Disclosure of notes of material transaction with related party| -
+--- Cyber Security Incidence ---
+[![BSE
+Ltd](https://www.bseindia.com/include/images/transparent.gif)](https://www.bseindia.com/corporates/<https:/www.bseind
+ia.com/>)  
+---  
+Corporate Governance  |  One 97 Communications Ltd  
+---  
+Scrip Code :543396 |  Quarter Ending : December 2024  
+Annexure 1   
+Cyber Security Incidence   
+| Details of Cyber security incidence  
+---  
+Whether as per Regulation 27(2)(ba) of SEBI (LODR) Regulations, 2015 there has been cyber security incidents or
+breaches or loss of data or documents during the quarter| No  
+
+File: cg_report, Page number: 6
+Other details of cyber security incidence or breaches or loss of data event| -  
+Number of cyber security incidence or breaches or loss of data event occurred during the quarter| 0  
+Date of the event| -| Brief details of the event| -
+--- Affirmations ---
+[![BSE
+Ltd](https://www.bseindia.com/include/images/transparent.gif)](https://www.bseindia.com/corporates/<https:/www.bseind
+ia.com/>)  
+---  
+Corporate Governance  |  One 97 Communications Ltd  
+---  
+Scrip Code :543396 |  Quarter Ending : December 2024  
+Annexure I   
+VI. Affirmations   
+| Sr| Subject| Compliance status (Yes/No)  
+---|---|---  
+1| The composition of board of directors is in terms of SEBI (Listing obligations and disclosure requirements)
+Regulations, 2015| Yes  
+2| The composition of audit committee is in terms of SEBI (Listing obligations and disclosure requirements) Regulations,
+2015**a. Audit committee**|  Yes  
+3| The composition of the nomination and remuneration committee is in terms of SEBI (Listing obligations and disclosure
+requirements) Regulations, 2015**b. Nomination and remuneration committee**|  Yes  
+4| The composition of the stakeholders relationship committee is in terms of SEBI (Listing obligations and disclosure
+requirements) Regulations, 2015**c. Stakeholders relationship committee**|  Yes  
+5| The composition of the risk management committee is in terms of SEBI (Listing obligations and disclosure
+requirements) Regulations, 2015**d. Risk management committee (applicable to the top 1000 listed entities)**|  Yes  
+6| The committee members have been made aware of their powers, role and responsibilities as specified in of SEBI
+(Listing obligations and disclosure requirements) Regulations, 2015| Yes  
+7| The meetings of the board of directors and the above committees have been conducted in the manner as specified
+SEBI (Listing obligations and disclosure requirements) Regulations, 2015| Yes  
+8| This report and/or the report submitted in the previous quarter has been placed before board of directors| Yes  
+9.| Any comments/observations/advice of Board of Directors may be mentioned here:| -  
+| Annexure I  
+---  
+
+File: cg_report, Page number: 7
+**Sr**| **Subject**| **Compliance status**  
+1.| Name of signatory| Sunil Kumar Bansal  
+2.| Designation| Company Secretary and Compliance Officer
+--- Annual Affirmation ---
+[![BSE
+Ltd](https://www.bseindia.com/include/images/transparent.gif)](https://www.bseindia.com/corporates/<https:/www.bseind
+ia.com/>)  
+---  
+Corporate Governance  |  One 97 Communications Ltd  
+---  
+Scrip Code :543396 |  Quarter Ending : December 2024  
+Annexure 2   
+II. Annual Affirmation   
+| Sr| Particulars| Regulation Number| Compliance status (Yes/No)| If status is "No" details of non-compliance   
+---|---|---|---|---  
+Any other information to be provided| -  
+No Data Available  
+Annexure II  
+| Name of signatory| Sunil Kumar Bansal  
+---|---  
+Designation| Company Secretary and Compliance Officer
+
+File: cg_report, Page number: 8
+Section: Shareholding Pattern
+--- Shareholding Pattern ---
+AgentMADS/scrapers/data/scraped/Paytm/Shareholding Pattern.png
+
+File: cg_report, Page number: 10
+--- shareholding pattern of the Promoter and Promoter Group ---
+[![](https://www.bseindia.com/include/images/bselogo.gif)](https://www.bseindia.com/corporates/</index.html>)  
+---  
+Shareholding Pattern   
+| | **One 97 Communications Ltd**  
+---  
+**Scrip Code :** 543396| **Quarter Ending :** December 2024  
+**Statement showing shareholding pattern of the Promoter and Promoter Group**  
+|  Category of shareholder| Entity Type| Nos. of shareholders| No. of fully paid up equity shares held| Total nos. shares
+held| Shareholding as a % of total no. of shares (calculated as per SCRR, 1957)As a % of (A+B+C2)| Number of Voting
+Rights held in each class of securities|  Number of equity shares held in dematerialized form  
+---|---|---|---|---|---|---|---  
+Class eg: X| Total  
+**A1) Indian**|  0.00| 0.00  
+**A2) Foreign**|  0.00| 0.00
+--- shareholding pattern of the Public shareholder ---
+[ ![](https://www.bseindia.com/include/images/bselogo.gif)](https://www.bseindia.com/corporates/</index.html>)  
+---  
+Shareholding Pattern Public Shareholder   
+| | **One 97 Communications Ltd**  
+---  
+**Scrip Code :** 543396| **Quarter ending :** December 2024  
+**Statement showing shareholding pattern of the Public shareholder**  
+|  Category & Name of the Shareholders| No. of shareholder| No. of fully paid up equity shares held| Total no. shares
+held| Shareholding % calculated as per SCRR, 1957 As a % of (A+B+C2)| No. of Voting Rights| Total as a % of Total
+Voting right| No. of equity shares held in dematerialized form(Not Applicable)|  Sub-categorization of shares (XV)  
+---|---|---|---|---|---|---|---|---  
+Shareholding (No. of shares) under  
+SubCategory_I|  SubCategory_II|  SubCategory_III  
+**B1) Institutions**|  0| 0|  0.00| 0.00| -| -| -  
+**B2) Institutions (Domestic)**|  0| 0|  0.00| 0.00| -| -| -  
+**Mutual Funds/**|  27| 71414139| 7,14,14,139|  11.20| 7,14,14,139| 11.20| 7,14,14,139  
+
+File: cg_report, Page number: 11
+Motilal Oswal Mutual Funds| 1| 13435375| 1,34,35,375|  2.11| 1,34,35,375| 2.11| 1,34,35,375  
+Nippon Mutual Funds| 1| 14771701| 1,47,71,701|  2.32| 1,47,71,701| 2.32| 1,47,71,701  
+Mirae Asset Mutual Funds| 1| 26562774| 2,65,62,774|  4.17| 2,65,62,774| 4.17| 2,65,62,774  
+**Alternate Investment Funds**|  23| 2268788| 22,68,788|  0.36| 22,68,788| 0.36| 22,68,788  
+**Insurance Companies**|  9| 933100| 9,33,100|  0.15| 9,33,100| 0.15| 9,33,100  
+**NBFCs registered with RBI**|  7| 1067005| 10,67,005|  0.17| 10,67,005| 0.17| 10,67,005  
+**Other Financial Institutions**|  1| 30089| 30,089|  0.00| 30,089| 0.00| 30,089  
+**Sub Total B1**|  67| 75713121| 7,57,13,121|  11.88| 7,57,13,121| 11.88| 7,57,13,121  
+**B3) Institutions (Foreign)**|  0| 0|  0.00| 0.00| -| -| -  
+**Foreign Direct Investment**|  23| 238849100| 23,88,49,100|  37.47| 23,88,49,100| 37.47| 23,88,49,100| 9,79,15,967  
+SAIF Partners India IV Limited| 1| 29180478| 2,91,80,478|  4.58| 2,91,80,478| 4.58| 2,91,80,478| 2,91,80,478  
+Antfin (Netherlands) Holding B.V.| 1| 62797816| 6,27,97,816|  9.85| 6,27,97,816| 9.85| 6,27,97,816  
+Resilient Asset Management B V| 1| 65335101| 6,53,35,101|  10.25| 6,53,35,101| 10.25| 6,53,35,101  
+SAIF III Mauritius Company Limited| 1| 68735489| 6,87,35,489|  10.78| 6,87,35,489| 10.78| 6,87,35,489| 6,87,35,489  
+**Foreign Portfolio Investors Category I**|  237| 111102313| 11,11,02,313|  17.43| 11,11,02,313| 17.43| 11,11,02,313  
+Morgan Stanley Asia (Singapore) Pte. - Odi| 1| 7112985| 71,12,985|  1.12| 71,12,985| 1.12| 71,12,985  
+Tree Line Asia Master Fund (Singapore) Pte Ltd| 1| 8600000| 86,00,000|  1.35| 86,00,000| 1.35| 86,00,000  
+Government Pension Fund Global| 1| 11368054| 1,13,68,054|  1.78| 1,13,68,054| 1.78| 1,13,68,054  
+**Foreign Portfolio Investors Category II**|  27| 8268832| 82,68,832|  1.30| 82,68,832| 1.30| 82,68,832  
+**Sub Total B2**|  287| 358220245| 35,82,20,245|  56.20| 35,82,20,245| 56.20| 35,82,20,245| 9,79,15,967  
+**B4) Central Government/ State Government(s)/ President of India**|  0| 0|  0.00| 0.00| -| -| -  
+**Central Government / President of India**|  1| 1| 1|  0.00| 1| 0.00| 1  
+**Sub Total B3**|  1| 1| 1|  0.00| 1| 0.00| 1  
+**B5) Non-Institutions**|  0| 0|  0.00| 0.00| -| -| -  
+**Directors and their relatives (excluding independent directors and nominee directors)**|  3| 59253447| 5,92,53,447| 
+9.30| 5,92,53,447| 9.30| 5,92,53,447| 5,78,45,053  
+Vijay Shekhar Sharma| 1| 57845053| 5,78,45,053|  9.08| 5,78,45,053| 9.08| 5,78,45,053| 5,78,45,053  
+**Resident Individuals holding nominal share capital up to Rs. 2 lakhs**|  967358| 69964915| 6,99,64,915|  10.98|
+6,99,64,915| 10.98| 6,99,63,153  
+**Resident Individuals holding nominal share capital in excess of Rs. 2 lakhs**|  20| 18729478| 1,87,29,478|  2.94|
+1,87,29,478| 2.94| 1,87,29,478  
+Akash Bhanshali| 1| 7921162| 79,21,162|  1.24| 79,21,162| 1.24| 79,21,162  
+**Non Resident Indians (NRIs)**|  9304| 6218981| 62,18,981|  0.98| 62,18,981| 0.98| 59,97,981  
+**Foreign Nationals**|  3| 27889| 27,889|  0.00| 27,889| 0.00| 27,889  
+
+File: cg_report, Page number: 12
+**Foreign Companies**|  1| 1117350| 11,17,350|  0.18| 11,17,350| 0.18| 11,17,350  
+**Bodies Corporate**|  1717| 43726599| 4,37,26,599|  6.86| 4,37,26,599| 6.86| 4,37,26,599  
+Axis Trustee Services Limited| 1| 30970406| 3,09,70,406|  4.86| 3,09,70,406| 4.86| 3,09,70,406  
+**Any Other (specify)**|  10991| 4410604| 44,10,604|  0.69| 44,10,604| 0.69| 44,09,434  
+Clearing Members| 11| 2754| 2,754|  0.00| 2,754| 0.00| 2,754  
+HUF| 10765| 1931861| 19,31,861|  0.30| 19,31,861| 0.30| 19,31,861  
+LLP| 206| 2184053| 21,84,053|  0.34| 21,84,053| 0.34| 21,84,053  
+Trusts| 9| 291936| 2,91,936|  0.05| 2,91,936| 0.05| 2,90,766  
+**Sub Total B4**|  989397| 203449263| 20,34,49,263|  31.92| 20,34,49,263| 31.92| 20,32,25,331| 5,78,45,053  
+**B=B1+B2+B3+B4**|  989752| 637382630| 63,73,82,630|  100.00| 63,73,82,630| 100.00| 63,71,58,698| 15,57,61,020  
+Details of the shareholders acting as persons in Concert including their Shareholding (No. and %):  
+Details of Shares which remain unclaimed may be given here along with details such as number of shareholders,
+outstanding shares held in demat/unclaimed suspense account, voting rights which are frozen etc.  
+**_Note_**(1) PAN would not be displayed on website of Stock Exchange(s).(2) The above format needs to disclose
+name of all holders holding more than 1% of total number of shares(3) W.r.t. the information pertaining to Depository
+Receipts, the same may be disclosed in the respective columns to the extent information available,.
+--- shareholding pattern of the Non Promoter- Non Public shareholder ---
+[ ![](https://www.bseindia.com/include/images/bselogo.gif)](https://www.bseindia.com/corporates/</index.html>)  
+---  
+Shareholding Pattern Non Promoter-Non Public   
+| | **One 97 Communications Ltd**  
+---  
+**Scrip Code :** 543396| **Quarter ending :** December 2024  
+**Statement showing shareholding pattern of the Non Promoter- Non Public shareholder**  
+|  Category & Name of the Shareholders(I)| No. of shareholder(III)| No. of fully paid up equity shares held(IV)| Total no.
+shares held(VII = IV+V+VI)| Shareholding % calculated as per SCRR, 1957 As a % of (A+B+C2)(VIII)| Number of equity
+shares held in dematerialized form(XIV)(Not Applicable)  
+---|---|---|---|---|---  
+**C1) Custodian/DR Holder**|  0| 0|  0.00  
+**C2) Employee Benefit Trust**|  0| 0|  0.00  
+** _Note_**(1) PAN would not be displayed on website of Stock Exchange(s).(2) The above format needs to disclose
+name of all holders holding more than 1% of total number of shares(3) W.r.t. the information pertaining to Depository
+Receipts, the same may be disclosed in the respective columns to the extent information available,.
+
+File: cg_report, Page number: 13
+--- Company Remarks ---
+[![](https://www.bseindia.com/include/images/bselogo.gif)](https://www.bseindia.com/corporates/</index.html>)  
+---  
+Shareholding Pattern   
+| | **One 97 Communications Ltd**  
+---  
+**Scrip Code :** 543396| **Quarter ending :** December 2024  
+| The categorisation of shareholders in the Shareholding Pattern is being disclosed basis the categorisation mentioned in
+the Benpos and reports received from the Registrar and Transfer Agent of the Company viz. MUFG Intime India Private
+Limited.  
+---
+--- Details of Disclosure by Trading Members (TM) holding 1% or more of the Total No. of Shares. ---
+[![](https://www.bseindia.com/include/images/bselogo.gif)](https://www.bseindia.com/corporates/</index.html>)  
+---  
+Shareholding Pattern   
+| | **One 97 Communications Ltd**  
+---  
+**Scrip Code :** 543396| **Quarter ending :** December 2024  
+**Details of disclosure made by the Trading Members holding 1% or more of the Total No. of shares of the company.**  
+|  Sl. No.| Name of the Trading Member | Name of the Beneficial Owner | No. of shares held | % of total no. of shares|
+Date of reporting by the Trading Member  
+---|---|---|---|---|---  
+-| NIL| NIL| NIL| NIL| NIL
+--- Statement showing foreign ownership limits ---
+[![](https://www.bseindia.com/include/images/bselogo.gif)](https://www.bseindia.com/corporates/</index.html>)  
+---  
+Shareholding Pattern   
+| | **One 97 Communications Ltd**  
+---  
+**Scrip Code :** 543396| **Quarter ending :** December 2024   
+**Statement showing foreign ownership limits**  
+
+File: cg_report, Page number: 14
+|  Approved Limits %| Limits Utilized %  
+---|---  
+As on shareholding date| 100.00| 56.79  
+As on the end of previous 1st quarter| 100.00| 56.13  
+As on the end of previous 2nd quarter| 100.00| 58.69  
+As on the end of previous 3rd quarter| 100.00| 60.88  
+As on the end of previous 4th quarter| 100.00| 64.16
+
