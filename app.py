@@ -99,18 +99,88 @@ if 'operation_status' not in st.session_state:
     st.session_state.operation_status = "None"
 
 def get_company_symbols():
-    """Get list of company symbols from parent directory"""
+    """Get list of company symbols from companies_selection.txt file or by scanning directories"""
     base_path = st.session_state.get('base_path', '')
     if not base_path:
+        st.warning("Base path is not set. Please configure a base path.")
         return []
-        
-    parent_path = Path(base_path).parent
-        
+    
+    # Path to the companies selection file
+    companies_file = os.path.join(base_path, 'companies_selection.txt')
+    
+    # Method 1: Try to read from companies_selection.txt
+    companies_from_file = []
+    if os.path.exists(companies_file):
+        try:
+            # Read the file
+            with open(companies_file, 'r') as f:
+                content = f.read().strip()
+            
+            # Parse the comma-separated list
+            # Skip lines starting with # (comments)
+            for line in content.split('\n'):
+                if line.strip() and not line.strip().startswith('#'):
+                    # Add companies from this line
+                    companies = [c.strip() for c in line.split(',') if c.strip()]
+                    companies_from_file.extend(companies)
+            
+            if companies_from_file:
+                logger.info(f"Loaded {len(companies_from_file)} companies from selection file")
+                return companies_from_file
+            else:
+                logger.warning("Companies selection file exists but is empty or contains only comments")
+        except Exception as e:
+            logger.error(f"Error reading companies selection file: {e}")
+    
+    # Method 2: Fall back to scanning directories
+    logger.info(f"Attempting to scan directories in {base_path}")
     try:
-        return [f.name for f in os.scandir(parent_path) 
-                if f.is_dir() and f.name not in ['95_all_results', '.git', '__pycache__']]
+        # Scan directories directly in the base path
+        companies_from_dirs = [f.name for f in os.scandir(base_path) 
+                               if f.is_dir() and f.name not in ['95_all_results', '.git', '__pycache__']]
+        
+        if companies_from_dirs:
+            logger.info(f"Found {len(companies_from_dirs)} company directories by scanning")
+            
+            # Create the companies file for future use if it doesn't exist
+            if not os.path.exists(companies_file):
+                try:
+                    with open(companies_file, 'w') as f:
+                        f.write("# Add comma-separated company names in this file\n")
+                        f.write("# Example: PAYTM,HDFC,RELIANCE\n")
+                        f.write(",".join(companies_from_dirs))
+                    logger.info(f"Created companies selection file with found directories: {companies_file}")
+                except Exception as e:
+                    logger.error(f"Error creating companies file: {e}")
+            
+            return companies_from_dirs
+        else:
+            logger.warning(f"No company directories found in {base_path}")
+            
+            # Create an empty selection file if none exists
+            if not os.path.exists(companies_file):
+                try:
+                    with open(companies_file, 'w') as f:
+                        f.write("# Add comma-separated company names in this file\n")
+                        f.write("# Example: PAYTM,HDFC,RELIANCE\n")
+                    logger.info(f"Created empty companies selection file: {companies_file}")
+                except Exception as e:
+                    logger.error(f"Error creating companies file: {e}")
+            
+            # Show guidance to the user
+            st.warning(f"""
+            No company folders found in the base path: {base_path}
+            
+            You can either:
+            1. Create company folders in this directory manually
+            2. Edit 'companies_selection.txt' in this directory to list your companies
+            3. Change the base path to point to where your company folders are located
+            """)
+            
+            return []
     except Exception as e:
-        logger.error(f"Error getting company symbols: {e}")
+        logger.error(f"Error scanning directories: {e}")
+        st.error(f"Error finding company directories: {str(e)}")
         return []
 
 def get_questions_list():
@@ -641,7 +711,9 @@ def main():
     # )
     
     current_directory = os.path.dirname(os.path.abspath(__file__))
-    base_path = current_directory + "/PAYTM/"
+    print(f"Current Directory: {current_directory}")
+    
+    base_path = current_directory
     
     if base_path:
         st.session_state.base_path = base_path
@@ -655,6 +727,14 @@ def main():
         index=0,
         help="Select a company to analyze"
     )
+
+    print(f"Selected Company: {selected_company}")
+    base_path = os.path.join(base_path, selected_company, "")
+    
+    
+    if base_path:
+        st.session_state.base_path = base_path
+
     
     # Retrieval method
     retrieval_method = st.sidebar.selectbox(
@@ -1193,7 +1273,7 @@ def main():
     st.markdown("---")
     st.markdown(
         "<div style='text-align: center; padding: 20px; background-color: #f5f5f5; border-radius: 10px; margin-top: 30px;'>"
-        "<p style='font-size: 16px; font-weight: bold; color: #4B5563;'>Made with ♥️ by Monil</p>"
+        "<p style='font-size: 16px; font-weight: bold; color: #4B5563;'>Made with ♥️ by Monil Shah</p>"
         "<p style='font-size: 12px; color: #6B7280;'>Corporate Governance Scoring System © 2025</p>"
         "</div>", 
         unsafe_allow_html=True
