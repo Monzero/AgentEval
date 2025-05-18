@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 # Set page configuration
 st.set_page_config(
-    page_title="Corporate Governance Scoring System",
-    page_icon="📊",
+    page_title="AgentEval: Corporate Governance Scoring System",
+    page_icon="📝",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -105,7 +105,7 @@ def get_company_symbols():
         return []
         
     parent_path = Path(base_path).parent
-    
+        
     try:
         return [f.name for f in os.scandir(parent_path) 
                 if f.is_dir() and f.name not in ['95_all_results', '.git', '__pycache__']]
@@ -633,12 +633,15 @@ def main():
     st.sidebar.markdown('## Configuration')
     
     # Base path input
-    base_path = st.sidebar.text_input(
-        "Base Path",
-        value=st.session_state.get('base_path', ''),
-        help="Base path for company data (leave empty for default)",
-        key="base_path_input"
-    )
+    # base_path = st.sidebar.text_input(
+    #     "Base Path",
+    #     value=st.session_state.get('base_path', ''),
+    #     help="Base path for company data (leave empty for default)",
+    #     key="base_path_input"
+    # )
+    
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+    base_path = current_directory + "/PAYTM/"
     
     if base_path:
         st.session_state.base_path = base_path
@@ -1184,6 +1187,17 @@ def main():
         
         if st.session_state.last_operation_time:
             st.sidebar.markdown(f"**Duration:** {st.session_state.last_operation_time:.2f} seconds")
+    
+    # Footer
+    # Add footer with attribution
+    st.markdown("---")
+    st.markdown(
+        "<div style='text-align: center; padding: 20px; background-color: #f5f5f5; border-radius: 10px; margin-top: 30px;'>"
+        "<p style='font-size: 16px; font-weight: bold; color: #4B5563;'>Made with ♥️ by Monil</p>"
+        "<p style='font-size: 12px; color: #6B7280;'>Corporate Governance Scoring System © 2025</p>"
+        "</div>", 
+        unsafe_allow_html=True
+    )
 
 if __name__ == "__main__":
     main()
