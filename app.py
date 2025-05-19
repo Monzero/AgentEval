@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # Set page configuration
 st.set_page_config(
     page_title="AgentEval: Corporate Governance Scoring System",
-    page_icon="🐈‍⬛",
+    page_icon="📝",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -1044,199 +1044,300 @@ def main():
                     st.markdown("### Company Comparison")
                     
                     if len(agg_scores) > 0:
-                        # Group by company and calculate mean score
-                        company_scores = agg_scores.groupby('company')['score'].mean().reset_index()
+                        # Get all unique companies
+                        all_companies = sorted(agg_scores['company'].unique())
                         
-                        # Create bar chart for company comparison
-                        fig3, ax3 = plt.subplots(figsize=(12, 8))
+                        # Create a multiselect widget for company selection
+                        selected_companies = st.multiselect(
+                            "Select companies to compare:", 
+                            options=all_companies,
+                            default=all_companies if len(all_companies) <= 10 else all_companies[:10],  # Default: all if ≤10 companies, or first 10
+                            help="Select specific companies to include in the comparison"
+                        )
                         
-                        # Sort by score descending
-                        company_scores = company_scores.sort_values('score', ascending=False)
-                        
-                        # Create bar chart with adjusted scale
-                        bars = sns.barplot(x='company', y='score', data=company_scores, ax=ax3, palette='viridis')
-                        
-                        # Add value labels on top of bars
-                        for bar in bars.patches:
-                            ax3.annotate(f'{bar.get_height():.1f}',
-                                        (bar.get_x() + bar.get_width() / 2, bar.get_height()),
-                                        ha='center', va='bottom',
-                                        fontsize=10)
-                        
-                        # Add labels and title
-                        ax3.set_xlabel('Company', fontsize=12)
-                        ax3.set_ylabel('Average Score', fontsize=12)
-                        ax3.set_title('Average Scores by Company', fontsize=14)
-                        ax3.set_ylim(0, 2.2)  # Adjusted for 0-2 scale with room for labels
-                        
-                        # Set y-axis to show 0, 0.5, 1, 1.5, and 2
-                        ax3.set_yticks([0, 0.5, 1, 1.5, 2])
-                        
-                        # Rotate x-labels for better readability
-                        plt.xticks(rotation=45, ha='right')
-                        
-                        # Add grid
-                        ax3.grid(True, axis='y', linestyle='--', alpha=0.7)
-                        
-                        # Display plot
-                        st.pyplot(fig3)
-                        
-                        # Category-wise comparison
-                        st.markdown("### Category-wise Company Comparison")
-                        
-                        # Add category selector
-                        if 'category' in agg_scores.columns:
-                            categories = sorted(agg_scores['category'].unique())
-                            selected_category = st.selectbox(
-                                "Select category for comparison:",
-                                options=categories
-                            )
+                        # Only continue if at least one company is selected
+                        if not selected_companies:
+                            st.warning("Please select at least one company to compare")
+                        else:
+                            # Group by company and calculate mean score (filtering to selected companies)
+                            company_scores = agg_scores[agg_scores['company'].isin(selected_companies)].groupby('company')['score'].mean().reset_index()
                             
-                            # Filter by selected category
-                            category_data = agg_scores[agg_scores['category'] == selected_category]
+                            # Sort by score descending
+                            company_scores = company_scores.sort_values('score', ascending=False)
                             
-                            # Create pivot table: companies vs questions
-                            if 'que_no' in category_data.columns and len(category_data) > 0:
-                                # Group by company and question, get average score
-                                pivot_data = category_data.pivot_table(
-                                    index='company', 
-                                    columns='que_no', 
-                                    values='score',
-                                    aggfunc='mean'
-                                )
-                                
-                                # Create heatmap
-                                fig4, ax4 = plt.subplots(figsize=(12, len(pivot_data) * 0.5 + 2))
-                                
-                                # Create heatmap with adjusted scale for 0-2
-                                sns.heatmap(
-                                    pivot_data, 
-                                    annot=True, 
-                                    cmap='YlGnBu', 
-                                    cbar_kws={'label': 'Score'}, 
-                                    ax=ax4,
-                                    vmin=0,
-                                    vmax=2,
-                                    fmt='.1f'  # Format with one decimal place
-                                )
-                                
-                                # Add labels and title
-                                ax4.set_xlabel('Question Number', fontsize=12)
-                                ax4.set_ylabel('Company', fontsize=12)
-                                ax4.set_title(f'Company Comparison for Category: {selected_category}', fontsize=14)
-                                
-                                # Display plot
-                                st.pyplot(fig4)
-                        
-                        # Add question-specific comparison
-                        st.markdown("### Question-Specific Company Comparison")
-                        
-                        # Add question selector
-                        if 'que_no' in agg_scores.columns:
-                            questions = sorted(agg_scores['que_no'].unique())
-                            selected_question = st.selectbox(
-                                "Select question for comparison:",
-                                options=questions
-                            )
+                            # Create bar chart with adjusted scale
+                            fig3, ax3 = plt.subplots(figsize=(12, 8))
                             
-                            # Filter by selected question
-                            question_data = agg_scores[agg_scores['que_no'] == selected_question]
+                            bars = sns.barplot(x='company', y='score', data=company_scores, ax=ax3, palette='viridis')
                             
-                            # Create bar chart for specific question
-                            if len(question_data) > 0:
-                                fig5, ax5 = plt.subplots(figsize=(12, 8))
-                                
-                                # Sort by score descending
-                                question_data = question_data.sort_values('score', ascending=False)
-                                
-                                # Create bar chart with adjusted scale
-                                bars = sns.barplot(x='company', y='score', data=question_data, ax=ax5, palette='viridis')
-                                
-                                # Add value labels on top of bars
-                                for bar in bars.patches:
-                                    ax5.annotate(f'{bar.get_height():.0f}',
+                            # Add value labels on top of bars
+                            for bar in bars.patches:
+                                ax3.annotate(f'{bar.get_height():.1f}',
                                             (bar.get_x() + bar.get_width() / 2, bar.get_height()),
                                             ha='center', va='bottom',
                                             fontsize=10)
-                                
-                                # Add labels and title
-                                ax5.set_xlabel('Company', fontsize=12)
-                                ax5.set_ylabel('Score', fontsize=12)
-                                ax5.set_title(f'Company Scores for Question {selected_question}', fontsize=14)
-                                ax5.set_ylim(0, 2.2)  # Adjusted for 0-2 scale
-                                
-                                # Set y-axis to show exactly 0, 1, and 2
-                                ax5.set_yticks([0, 1, 2])
-                                
-                                # Rotate x-labels for better readability
-                                plt.xticks(rotation=45, ha='right')
-                                
-                                # Add grid
-                                ax5.grid(True, axis='y', linestyle='--', alpha=0.7)
-                                
-                                # Display plot
-                                st.pyplot(fig5)
-                                
-                                # Add justification view
-                                st.markdown("### Score Justifications")
-                                
-                                if 'justification' in question_data.columns:
-                                    for _, row in question_data.iterrows():
-                                        with st.expander(f"{row['company']} - Score: {row['score']}"):
-                                            st.write(row['justification'])
-                        
-                        # Add correlation analysis
-                        st.markdown("### Score Correlation Analysis")
-                        
-                        if len(agg_scores) > 0:
-                            # Create pivot table for correlation analysis
-                            try:
-                                # Pivot data to get company x question matrix
-                                corr_pivot = agg_scores.pivot_table(
-                                    index='company', 
-                                    columns='que_no', 
-                                    values='score',
-                                    aggfunc='mean'
+                            
+                            # Add labels and title
+                            ax3.set_xlabel('Company', fontsize=12)
+                            ax3.set_ylabel('Average Score', fontsize=12)
+                            ax3.set_title(f'Average Scores by Company ({len(selected_companies)} companies)', fontsize=14)
+                            ax3.set_ylim(0, 2.2)  # Adjusted for 0-2 scale with room for labels
+                            
+                            # Set y-axis to show 0, 0.5, 1, 1.5, and 2
+                            ax3.set_yticks([0, 0.5, 1, 1.5, 2])
+                            
+                            # Rotate x-labels for better readability
+                            plt.xticks(rotation=45, ha='right')
+                            
+                            # Add grid
+                            ax3.grid(True, axis='y', linestyle='--', alpha=0.7)
+                            
+                            # Display plot
+                            st.pyplot(fig3)
+                            
+                            # Add an option to download the comparison data
+                            csv_download = company_scores.to_csv(index=False)
+                            st.download_button(
+                                label="Download Company Comparison Data",
+                                data=csv_download,
+                                file_name=f"company_comparison_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                                mime="text/csv"
+                            )
+                            
+                            # Category-wise comparison
+                            st.markdown("### Category-wise Company Comparison")
+                            
+                            # Add category selector
+                            if 'category' in agg_scores.columns:
+                                categories = sorted(agg_scores['category'].unique())
+                                selected_category = st.selectbox(
+                                    "Select category for comparison:",
+                                    options=categories
                                 )
                                 
-                                # Calculate correlation between questions
-                                corr_matrix = corr_pivot.corr()
+                                # Filter by selected category
+                                category_data = agg_scores[agg_scores['category'] == selected_category]
                                 
-                                # Create heatmap for correlation
-                                fig6, ax6 = plt.subplots(figsize=(12, 10))
+                                # Filter further by selected companies
+                                if selected_companies and len(selected_companies) > 0:
+                                    category_data = category_data[category_data['company'].isin(selected_companies)]
                                 
-                                # Create heatmap with custom scale for correlation (-1 to 1)
-                                sns.heatmap(
-                                    corr_matrix, 
-                                    annot=True, 
-                                    cmap='coolwarm', 
-                                    cbar_kws={'label': 'Correlation'}, 
-                                    ax=ax6,
-                                    vmin=-1,
-                                    vmax=1,
-                                    fmt='.2f'  # Format with two decimal places
+                                # Create pivot table: companies vs questions
+                                if 'que_no' in category_data.columns and len(category_data) > 0:
+                                    # Group by company and question, get average score
+                                    pivot_data = category_data.pivot_table(
+                                        index='company', 
+                                        columns='que_no', 
+                                        values='score',
+                                        aggfunc='mean'
+                                    )
+                                    
+                                    # Create heatmap
+                                    fig4, ax4 = plt.subplots(figsize=(12, len(pivot_data) * 0.5 + 2))
+                                    
+                                    # Create heatmap with adjusted scale for 0-2
+                                    sns.heatmap(
+                                        pivot_data, 
+                                        annot=True, 
+                                        cmap='YlGnBu', 
+                                        cbar_kws={'label': 'Score'}, 
+                                        ax=ax4,
+                                        vmin=0,
+                                        vmax=2,
+                                        fmt='.1f'  # Format with one decimal place
+                                    )
+                                    
+                                    # Add labels and title
+                                    ax4.set_xlabel('Question Number', fontsize=12)
+                                    ax4.set_ylabel('Company', fontsize=12)
+                                    ax4.set_title(f'Company Comparison for Category: {selected_category}', fontsize=14)
+                                    
+                                    # Display plot
+                                    st.pyplot(fig4)
+                                    
+                                    # Download button for heatmap data
+                                    csv_heatmap = pivot_data.reset_index().to_csv(index=False)
+                                    st.download_button(
+                                        label="Download Heatmap Data",
+                                        data=csv_heatmap,
+                                        file_name=f"category_{selected_category}_heatmap_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                                        mime="text/csv"
+                                    )
+                                else:
+                                    st.warning(f"No data available for category '{selected_category}' with the selected companies")
+                            
+                            # Add question-specific comparison
+                            st.markdown("### Question-Specific Company Comparison")
+                            
+                            # Add question selector
+                            if 'que_no' in agg_scores.columns:
+                                questions = sorted(agg_scores['que_no'].unique())
+                                selected_question = st.selectbox(
+                                    "Select question for comparison:",
+                                    options=questions
                                 )
                                 
-                                # Add labels and title
-                                ax6.set_xlabel('Question Number', fontsize=12)
-                                ax6.set_ylabel('Question Number', fontsize=12)
-                                ax6.set_title('Correlation Between Question Scores', fontsize=14)
+                                # Filter by selected question
+                                question_data = agg_scores[agg_scores['que_no'] == selected_question]
                                 
-                                # Display plot
-                                st.pyplot(fig6)
+                                # Filter further by selected companies
+                                if selected_companies and len(selected_companies) > 0:
+                                    question_data = question_data[question_data['company'].isin(selected_companies)]
                                 
-                                # Add explanation
-                                st.info("""
-                                **Correlation Analysis Explanation:**
-                                - **1.0**: Questions that always receive the same scores (perfect positive correlation)
-                                - **0.0**: Questions with no pattern between their scores (no correlation)
-                                - **-1.0**: Questions that receive opposite scores (perfect negative correlation)
+                                # Create bar chart for specific question
+                                if len(question_data) > 0:
+                                    fig5, ax5 = plt.subplots(figsize=(12, 8))
+                                    
+                                    # Sort by score descending
+                                    question_data = question_data.sort_values('score', ascending=False)
+                                    
+                                    # Create bar chart with adjusted scale
+                                    bars = sns.barplot(x='company', y='score', data=question_data, ax=ax5, palette='viridis')
+                                    
+                                    # Add value labels on top of bars
+                                    for bar in bars.patches:
+                                        ax5.annotate(f'{bar.get_height():.0f}',
+                                                (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                                                ha='center', va='bottom',
+                                                fontsize=10)
+                                    
+                                    # Add labels and title
+                                    ax5.set_xlabel('Company', fontsize=12)
+                                    ax5.set_ylabel('Score', fontsize=12)
+                                    ax5.set_title(f'Company Scores for Question {selected_question}', fontsize=14)
+                                    ax5.set_ylim(0, 2.2)  # Adjusted for 0-2 scale
+                                    
+                                    # Set y-axis to show exactly 0, 1, and 2
+                                    ax5.set_yticks([0, 1, 2])
+                                    
+                                    # Rotate x-labels for better readability
+                                    plt.xticks(rotation=45, ha='right')
+                                    
+                                    # Add grid
+                                    ax5.grid(True, axis='y', linestyle='--', alpha=0.7)
+                                    
+                                    # Display plot
+                                    st.pyplot(fig5)
+                                    
+                                    # Add justification view
+                                    st.markdown("### Score Justifications")
+                                    
+                                    if 'justification' in question_data.columns:
+                                        for _, row in question_data.iterrows():
+                                            with st.expander(f"{row['company']} - Score: {row['score']}"):
+                                                st.write(row['justification'])
+                                                
+                                        # Download button for question data with justifications
+                                        csv_question = question_data.to_csv(index=False)
+                                        st.download_button(
+                                            label="Download Question Data with Justifications",
+                                            data=csv_question,
+                                            file_name=f"question_{selected_question}_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                                            mime="text/csv"
+                                        )
+                                else:
+                                    st.warning(f"No data available for question {selected_question} with the selected companies")
+                            
+                            # Add correlation analysis
+                            st.markdown("### Score Correlation Analysis")
+                            
+                            # Add options for correlation analysis
+                            corr_options = st.radio(
+                                "Select correlation analysis type:", 
+                                ["Question-to-Question Correlation", "Company-to-Company Correlation"],
+                                help="Question correlation shows how scores relate across questions. Company correlation shows similarities between companies."
+                            )
+                            
+                            if len(agg_scores) > 0:
+                                # Filter data to selected companies
+                                if selected_companies and len(selected_companies) > 0:
+                                    corr_data = agg_scores[agg_scores['company'].isin(selected_companies)]
+                                else:
+                                    corr_data = agg_scores
                                 
-                                High positive correlations may indicate redundant questions, while negative correlations might show trade-offs between different governance aspects.
-                                """)
-                            except Exception as e:
-                                st.warning(f"Could not perform correlation analysis: {e}")
-                
+                                try:
+                                    if corr_options == "Question-to-Question Correlation":
+                                        # Pivot data to get company x question matrix
+                                        corr_pivot = corr_data.pivot_table(
+                                            index='company', 
+                                            columns='que_no', 
+                                            values='score',
+                                            aggfunc='mean'
+                                        )
+                                        
+                                        # Calculate correlation between questions
+                                        corr_matrix = corr_pivot.corr()
+                                        
+                                        title_text = 'Correlation Between Question Scores'
+                                        xlabel_text = 'Question Number'
+                                        ylabel_text = 'Question Number'
+                                        
+                                    else:  # Company-to-Company Correlation
+                                        # Pivot data to get question x company matrix
+                                        corr_pivot = corr_data.pivot_table(
+                                            index='que_no', 
+                                            columns='company', 
+                                            values='score',
+                                            aggfunc='mean'
+                                        )
+                                        
+                                        # Calculate correlation between companies
+                                        corr_matrix = corr_pivot.corr()
+                                        
+                                        title_text = 'Correlation Between Company Scores'
+                                        xlabel_text = 'Company'
+                                        ylabel_text = 'Company'
+                                    
+                                    # Create heatmap for correlation
+                                    fig6, ax6 = plt.subplots(figsize=(12, 10))
+                                    
+                                    # Create heatmap with custom scale for correlation (-1 to 1)
+                                    sns.heatmap(
+                                        corr_matrix, 
+                                        annot=True, 
+                                        cmap='coolwarm', 
+                                        cbar_kws={'label': 'Correlation'}, 
+                                        ax=ax6,
+                                        vmin=-1,
+                                        vmax=1,
+                                        fmt='.2f'  # Format with two decimal places
+                                    )
+                                    
+                                    # Add labels and title
+                                    ax6.set_xlabel(xlabel_text, fontsize=12)
+                                    ax6.set_ylabel(ylabel_text, fontsize=12)
+                                    ax6.set_title(title_text, fontsize=14)
+                                    
+                                    # Rotate x-labels for better readability if needed
+                                    if corr_options == "Company-to-Company Correlation":
+                                        plt.xticks(rotation=45, ha='right')
+                                    
+                                    # Display plot
+                                    st.pyplot(fig6)
+                                    
+                                    # Add explanation
+                                    st.info("""
+                                    **Correlation Analysis Explanation:**
+                                    - **1.0**: Perfect positive correlation (identical patterns)
+                                    - **0.0**: No correlation (unrelated patterns)
+                                    - **-1.0**: Perfect negative correlation (opposite patterns)
+                                    
+                                    High positive correlations may indicate similar governance approaches, while negative correlations might show opposing governance philosophies.
+                                    """)
+                                    
+                                    # Add download button for correlation data
+                                    csv_corr = corr_matrix.reset_index().to_csv(index=False)
+                                    st.download_button(
+                                        label=f"Download {corr_options.split(' ')[0]} Correlation Data",
+                                        data=csv_corr,
+                                        file_name=f"{corr_options.split(' ')[0].lower()}_correlation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                                        mime="text/csv"
+                                    )
+                                    
+                                except Exception as e:
+                                    st.warning(f"Could not perform correlation analysis: {e}")
+                                    st.info("Correlation analysis requires multiple companies and questions with scores. Make sure your data has sufficient entries.")
+                    
                 except Exception as e:
                     st.error(f"Error loading or processing aggregated results: {e}")
                     
@@ -1252,8 +1353,7 @@ def main():
                 1. Score individual topics for your current company
                 2. View single-company results in the 'View Results' tab
                 3. Create visualizations for the current company in 'Visualize Scores' tab
-                """)
-            
+                """)        
     
     # Display operation status
     if st.session_state.operation_status != "None":
