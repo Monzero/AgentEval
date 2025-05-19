@@ -51,7 +51,7 @@ class CGSConfig:
         if base_path:
             self.base_path = base_path
         else:
-            self.base_path = f'/Users/monilshah/Documents/02_NWU/01_capstone/04_Code_v3/{company_sym}/'
+            self.base_path = f'/Users/monilshah/Documents/02_NWU/01_capstone/06_Code/{company_sym}/'
         
         # Define paths
         self.data_path = os.path.join(self.base_path, '98_data/')
@@ -321,6 +321,12 @@ class DocumentProcessor:
     def create_retriever(self, document_path):
         """Create a retriever based on configuration settings"""
         try:
+            # Check if direct method is specified
+            retrieval_method = self.config.retrieval_method.lower()
+            if retrieval_method == "direct":
+                logger.info(f"Direct method specified. No retriever needed for {document_path}")
+                return None  # No retriever needed for direct method
+                
             # Load document
             loader = PyPDFLoader(document_path)
             documents = loader.load()
@@ -333,8 +339,6 @@ class DocumentProcessor:
             page_chunks = self.create_page_level_chunks(document_path)
             
             # Determine which retriever to create based on config
-            retrieval_method = self.config.retrieval_method.lower()
-            
             if retrieval_method == "bm25" or retrieval_method == "hybrid":
                 # Create BM25 retriever
                 bm25_retriever = BM25Retriever.from_documents(documents)
@@ -412,7 +416,22 @@ class QueryEngine:
         logger.info(f"Querying document {document_path} with prompt: {prompt}")
         
         try:
-            # Try RAG approach first if enabled
+            # Check if we're using "direct" retrieval method
+            if self.config.retrieval_method.lower() == "direct":
+                # Skip RAG and go directly to Gemini query
+                logger.info(f"Using direct method as configured, bypassing RAG")
+                result = self._query_with_gemini(document_path, prompt)
+                if result and len(result.strip()) > 0:
+                    return result
+                    
+                # If that fails, try ChatPDF as final fallback
+                if self.config.CHATPDF_API_KEY:
+                    result = self._query_with_chatpdf(document_path, prompt)
+                    return result
+                    
+                return "Unable to process document query with direct method."
+                
+            # For non-direct methods, proceed with RAG if enabled
             if use_rag:
                 result = self._query_with_rag(document_path, prompt)
                 if result and len(result.strip()) > 0:
@@ -432,10 +451,15 @@ class QueryEngine:
         except Exception as e:
             logger.error(f"Error querying document: {e}")
             return f"Error querying document: {str(e)}"
-    
+        
     def _query_with_rag(self, document_path, prompt):
         """Query using optimized hybrid RAG with PDF slices"""
         try:
+            # Check if we're using direct method
+            if self.config.retrieval_method.lower() == "direct":
+                logger.info(f"Direct method specified. Bypassing RAG for {document_path}")
+                return None  # Signal caller to use direct method instead
+                
             # Store the current document path for fallback
             self.current_document_path = document_path
             
@@ -453,7 +477,7 @@ class QueryEngine:
             
             retriever = retriever_cache[document_path]
             if not retriever:
-                logger.warning(f"Failed to create retriever for {document_path}")
+                logger.warning(f"No retriever available for {document_path}")
                 return None
             
             # Get relevant documents using the modern API
@@ -500,6 +524,72 @@ class QueryEngine:
             logger.error(traceback.format_exc())
             return None
     
+    def query_gemini_with_pdf(self, pdf_path, prompt, max_size_mb=20, is_temp_file=False):
+        """
+        Query Gemini with a PDF document and a prompt
+        
+        Parameters:
+        - pdf_path: Path to the PDF file
+        - prompt: The query prompt to send along with the PDF
+        - max_size_mb: Maximum PDF size in MB (default: 20MB)
+        - is_temp_file: Whether this is a temporary file that should be deleted after use
+        
+        Returns:
+        - Gemini's response text, or an error message if the query fails
+        """
+        try:
+            if not self.config.genai_client:
+                return "Google API client not initialized."
+            
+            # Check file size - Gemini has limitations
+            file_size_mb = os.path.getsize(pdf_path) / (1024 * 1024)
+            if file_size_mb > max_size_mb:
+                logger.warning(f"Document too large for Gemini: {file_size_mb:.2f} MB > {max_size_mb} MB")
+                
+                # For large files, we could implement alternative strategies:
+                # 1. Try with first N pages
+                # 2. Compress the PDF
+                # 3. Extract and send text only
+                return f"Document size ({file_size_mb:.2f} MB) exceeds Gemini's limit ({max_size_mb} MB)"
+            
+            # Prepare the query
+            genai = self.config.genai_client
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            # Read file as bytes
+            with open(pdf_path, 'rb') as f:
+                pdf_bytes = f.read()
+                
+            # Log basic information
+            logger.info(f"Sending PDF to Gemini - Size: {file_size_mb:.2f}MB, File: {os.path.basename(pdf_path)}")
+            
+            # Create a multimodal prompt
+            import base64
+            response = model.generate_content(
+                contents=[
+                    {"mime_type": "application/pdf", 
+                    "data": base64.b64encode(pdf_bytes).decode('utf-8')},
+                    prompt
+                ]
+            )
+            
+            result = response.text
+            
+            # Clean up temporary file if requested
+            if is_temp_file:
+                try:
+                    os.remove(pdf_path)
+                    logger.debug(f"Removed temporary PDF: {pdf_path}")
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to clean up temporary PDF: {cleanup_error}")
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error querying Gemini with PDF: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return f"Error processing PDF with Gemini: {str(e)}"
+    
     def _query_with_gemini(self, document_path, prompt):
         """Query directly with Gemini and the full document"""
         try:
@@ -507,15 +597,13 @@ class QueryEngine:
                 logger.warning("Gemini client not initialized")
                 return None
                     
-            policy_filepath = pathlib.Path(document_path)
-            
             # Check file size - Gemini has limitations
             file_size_mb = os.path.getsize(document_path) / (1024 * 1024)
             if file_size_mb > 20:
                 logger.warning(f"Document too large for direct Gemini query: {file_size_mb:.2f} MB")
                 return None
             
-            # Prepare the query - using the module reference
+            # Prepare the query using the module reference
             genai = self.config.genai_client
             model = genai.GenerativeModel('gemini-1.5-flash')
             
@@ -523,15 +611,17 @@ class QueryEngine:
             with open(document_path, 'rb') as f:
                 file_bytes = f.read()
                 
-            # Create a multipart prompt
+            # Create a multipart prompt using base64 encoding for the PDF bytes
+            import base64
+            
+            # Log that we're sending the actual PDF, not just text
+            logger.info(f"Sending full PDF document to Gemini: {os.path.basename(document_path)}")
+            
+            # Send the document directly to Gemini - multimodal approach
             response = model.generate_content(
-                [
-                    genai.types.Part(
-                        inline_data=genai.types.Blob(
-                            mime_type='application/pdf',
-                            data=file_bytes
-                        )
-                    ),
+                contents=[
+                    {"mime_type": "application/pdf", 
+                    "data": base64.b64encode(file_bytes).decode('utf-8')},
                     prompt
                 ]
             )
@@ -542,8 +632,10 @@ class QueryEngine:
                 logger.warning(f"Document too large for Gemini: {e}")
             else:
                 logger.error(f"Error querying Gemini: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
             return None
-        
+    
     def _upload_to_chatpdf(self, document_path):
         """Upload a document to ChatPDF and get source ID"""
         try:
@@ -657,183 +749,6 @@ class QueryEngine:
                 else:
                     return "Could not locate valid document sources for query."
             
-            # Completely bypass PDF generation and just use text extraction
-            # This is safer and avoids the pymupdf issues
-            extracted_texts = []
-            page_citations = {}
-            
-            for slice_info in pdf_slices:
-                file_path = slice_info['file_path']
-                page_num = slice_info['page']
-                file_name = os.path.basename(file_path)
-                
-                try:
-                    doc = fitz.open(file_path)
-                    if 0 <= page_num - 1 < len(doc):  # Check valid page range (0-indexed)
-                        text = doc[page_num - 1].get_text()
-                        extracted_texts.append(f"Content from page {page_num}:\n{text}")
-                        
-                        # Track page for citation
-                        if file_name not in page_citations:
-                            page_citations[file_name] = []
-                        page_citations[file_name].append(page_num)
-                except Exception as e:
-                    logger.error(f"Error extracting text from {file_path}, page {page_num}: {e}")
-            
-            if not extracted_texts:
-                logger.error("Failed to extract any text from document pages")
-                return "Could not extract relevant document content for analysis."
-            
-            # Join extracted texts
-            combined_text = "\n\n".join(extracted_texts)
-            
-            # Use Gemini to analyze the text directly
-            try:
-                genai = self.config.genai_client
-                if genai:
-                    model = genai.GenerativeModel('gemini-1.5-flash')
-                    
-                    # Generate content with text input
-                    response = model.generate_content([
-                        "Please answer the following question based on the provided text excerpts:",
-                        prompt,
-                        "Text excerpts:",
-                        combined_text
-                    ])
-                    
-                    result = response.text
-                else:
-                    result = "Google API client not initialized."
-            except Exception as e:
-                logger.error(f"Error querying Gemini: {e}")
-                import traceback
-                logger.error(traceback.format_exc())
-                result = f"Error processing document with Gemini: {str(e)}"
-            
-            # Create simple page citations 
-            citations = []
-            for file_name, pages in page_citations.items():
-                if not pages:
-                    continue
-                    
-                # Sort pages for readability
-                pages.sort()
-                
-                # Simple approach: just list all pages
-                page_str = ", ".join(str(p) for p in pages)
-                citations.append(f"pp. {page_str} ({file_name})")
-            
-            # Add citations to result
-            if citations:
-                result += f"\n\nSources: {'; '.join(citations)}"
-            
-            return result
-        except Exception as e:
-            logger.error(f"Error in query with text excerpts: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
-            return f"Error querying documents: {str(e)}"
-    
-    def _query_with_chatpdf(self, document_path, prompt):
-        """Query using ChatPDF API"""
-        try:
-            source_id = self._upload_to_chatpdf(document_path)
-            if not source_id:
-                return None
-                
-            headers = {
-                'x-api-key': self.config.CHATPDF_API_KEY,
-                "Content-Type": "application/json",
-            }
-            
-            data = {
-                'sourceId': source_id,
-                'messages': [
-                    {
-                        'role': "user",
-                        'content': prompt,
-                    }
-                ]
-            }
-            
-            response = requests.post(
-                'https://api.chatpdf.com/v1/chats/message', 
-                headers=headers, 
-                json=data
-            )
-            
-            if response.status_code == 200:
-                result = response.json().get('content', '')
-                return result
-            else:
-                logger.error(f"ChatPDF query failed: {response.status_code} - {response.text}")
-                return None
-        except Exception as e:
-            logger.error(f"Error in ChatPDF query: {e}")
-            return None
-        
-
-        """Query Gemini with slices of the original PDF, including context pages"""
-        try:
-            # Store the current document path for fallback
-            current_doc = getattr(self, 'current_document_path', None)
-            
-            # Debug the chunks to see what metadata is available
-            for i, chunk in enumerate(top_chunks[:2]):  # Just log first two chunks to avoid clutter
-                logger.debug(f"Chunk {i} metadata: {getattr(chunk, 'metadata', {})}")
-                logger.debug(f"Chunk {i} type: {type(chunk)}")
-            
-            # Try to extract file paths and page numbers in a format-independent way
-            pdf_slices = []
-            
-            for chunk in top_chunks:
-                # Start with an empty info dict
-                slice_info = {"page": 1}  # Default to page 1
-                
-                # Check if it's a Document object with metadata
-                if hasattr(chunk, 'metadata') and isinstance(chunk.metadata, dict):
-                    metadata = chunk.metadata
-                    # Try different possible keys for file path
-                    for key in ['file_path', 'source', 'path', 'filename']:
-                        if key in metadata and metadata[key]:
-                            file_path = metadata[key]
-                            # If it's just a filename, prepend the data path
-                            if os.path.dirname(file_path) == '':
-                                file_path = os.path.join(self.config.data_path, file_path)
-                            slice_info["file_path"] = file_path
-                            break
-                    
-                    # Try different possible keys for page number
-                    for key in ['page', 'page_number', 'page_num']:
-                        if key in metadata and metadata[key]:
-                            try:
-                                slice_info["page"] = int(metadata[key])
-                            except (ValueError, TypeError):
-                                pass
-                            break
-                
-                # If we couldn't find a file path, try a different approach
-                if "file_path" not in slice_info and current_doc:
-                    # Use the document path we're currently querying
-                    slice_info["file_path"] = current_doc
-                
-                # Add to our slices if we have a file path
-                if "file_path" in slice_info and os.path.exists(slice_info["file_path"]):
-                    pdf_slices.append(slice_info)
-                else:
-                    logger.warning(f"Could not determine valid file path for chunk")
-            
-            # If we couldn't extract any valid slices, use a fallback approach
-            if not pdf_slices:
-                logger.warning("No valid file paths found in chunks, using current document")
-                if current_doc and os.path.exists(current_doc):
-                    # Create default slices for the first few pages of the document
-                    doc = fitz.open(current_doc)
-                    num_pages = min(5, len(doc))  # Use at most 5 pages
-                    pdf_slices = [{"file_path": current_doc, "page": i+1} for i in range(num_pages)]
-                else:
-                    return "Could not locate valid document sources for query."
-            
             # Group slices by file path
             files_to_pages = {}
             for s in pdf_slices:
@@ -886,26 +801,37 @@ class QueryEngine:
             temp_pdf_path = os.path.join(tempfile.gettempdir(), f"temp_slice_{int(time.time())}.pdf")
             output_pdf.save(temp_pdf_path)
             
-            # Query Gemini with the PDF and query
-            result = self.query_with_gemini_multimodal(temp_pdf_path, prompt)
+            # Query Gemini with the PDF using direct multimodal approach
+            genai = self.config.genai_client
+            if not genai:
+                return "Google API client not initialized."
+                
+            import base64
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            # Read file as bytes for multimodal query
+            with open(temp_pdf_path, 'rb') as f:
+                pdf_bytes = f.read()
+            
+            # Log what we're doing
+            logger.info(f"Sending sliced PDF to Gemini with {output_pdf.page_count} pages")
+            
+            # Send the PDF directly to Gemini as multimodal content
+            try:
+                response = model.generate_content(
+                    contents=[
+                        {"mime_type": "application/pdf", 
+                        "data": base64.b64encode(pdf_bytes).decode('utf-8')},
+                        prompt
+                    ]
+                )
+                
+                result = response.text
+            except Exception as gemini_error:
+                logger.error(f"Gemini API error: {gemini_error}")
+                return f"Error querying Gemini: {str(gemini_error)}"
             
             # Create page range citations
-            citations = []
-            for file_name, page_list in added_pages.items():
-                if not page_list:
-                    continue
-                    
-                # Convert to list, ensure sorted unique values
-                pages = sorted(list(set(page_list)))
-                
-                if not pages:
-                    continue
-                
-                # Simple approach: just list all pages
-                page_str = ", ".join(str(p) for p in pages)
-                citations.append(f"pp. {page_str} ({file_name})")
-            
-            
             citations = []
             for file_name, pages in added_pages.items():
                 if not pages:
@@ -949,8 +875,9 @@ class QueryEngine:
             # Clean up
             try:
                 os.remove(temp_pdf_path)
-            except:
-                pass
+                logger.debug(f"Removed temporary PDF: {temp_pdf_path}")
+            except Exception as cleanup_error:
+                logger.warning(f"Failed to clean up temporary PDF: {cleanup_error}")
             
             return result
         except Exception as e:
@@ -958,14 +885,52 @@ class QueryEngine:
             import traceback
             logger.error(traceback.format_exc())
             return f"Error querying with PDF slices: {str(e)}"
-
+    
+    def _query_with_chatpdf(self, document_path, prompt):
+        """Query using ChatPDF API"""
+        try:
+            source_id = self._upload_to_chatpdf(document_path)
+            if not source_id:
+                return None
+                
+            headers = {
+                'x-api-key': self.config.CHATPDF_API_KEY,
+                "Content-Type": "application/json",
+            }
+            
+            data = {
+                'sourceId': source_id,
+                'messages': [
+                    {
+                        'role': "user",
+                        'content': prompt,
+                    }
+                ]
+            }
+            
+            response = requests.post(
+                'https://api.chatpdf.com/v1/chats/message', 
+                headers=headers, 
+                json=data
+            )
+            
+            if response.status_code == 200:
+                result = response.json().get('content', '')
+                return result
+            else:
+                logger.error(f"ChatPDF query failed: {response.status_code} - {response.text}")
+                return None
+        except Exception as e:
+            logger.error(f"Error in ChatPDF query: {e}")
+            return None
+        
     def query_with_gemini_multimodal(self, temp_pdf_path, prompt):
         """Query Gemini with a PDF using the correct API format"""
         try:
             genai = self.config.genai_client
             if not genai:
                 return "Google API client not initialized."
-                
+                    
             import base64
             model = genai.GenerativeModel('gemini-1.5-flash')
             
@@ -991,7 +956,7 @@ class QueryEngine:
             
             # Fallback to simple text response if PDF processing fails
             return f"Error processing document with Gemini. The error was: {str(e)}"
-                    
+                        
 class GuardrailAgent:
     """Handles verification of LLM outputs"""
     
@@ -2132,8 +2097,7 @@ def create_master_agent(company_sym):
     
     return master_agent
 
-
-
+## Sample commands to run the script
 
 # # Set up the documents for a company
 # python scoring_topics_agentic_langchain.py --company PAYTM --mode setup
@@ -2192,19 +2156,6 @@ def test_retrieval(company_sym, document_path, query):
         print(f"Text snippet: {doc.page_content[:200]}...\n")
     
     return results
-
-# # Call this from main
-# if __name__ == "__main__":
-#     import sys
-#     if len(sys.argv) > 1 and sys.argv[1] == "--test-retrieval":
-#         company = "PAYTM"
-#         document_path = f"/Users/monilshah/Documents/02_NWU/01_capstone/04_Code_v3/{company}/98_data/annual_report_url.pdf"
-#         query = "shareholding pattern top 10 shareholders"
-#         test_retrieval(company, document_path, query)
-#         sys.exit(0)
-#     else:
-#         sys.exit(main())
-        
 
 
 def test_gemini_api(company_sym, query, text_content):
