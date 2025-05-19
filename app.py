@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # Set page configuration
 st.set_page_config(
     page_title="AgentEval: Corporate Governance Scoring System",
-    page_icon="📝",
+    page_icon="🦁",
     layout="wide",
     initial_sidebar_state="expanded"
 )
