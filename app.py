@@ -291,7 +291,6 @@ def setup_agent():
         st.session_state.operation_status = "Error"
         return False
 
-
 def process_questions(sr_no_list=None, load_all_fresh=False):
     """Process questions from prompts.csv"""
     if not st.session_state.agent or not st.session_state.setup_done:
@@ -303,41 +302,69 @@ def process_questions(sr_no_list=None, load_all_fresh=False):
         status_placeholder = st.empty()
         progress_bar = st.progress(0)
         
-        # Get number of questions to process for progress tracking
+        # Check existing results to determine what's already processed
+        results_path = os.path.join(st.session_state.agent.config.results_path, 'prompts_result.csv')
+        already_processed = []
+        
+        if not load_all_fresh and os.path.exists(results_path):
+            try:
+                existing_results = pd.read_csv(results_path)
+                already_processed = existing_results['sr_no'].unique().tolist()
+                logger.info(f"Found {len(already_processed)} already processed questions")
+            except Exception as e:
+                logger.error(f"Error reading existing results: {e}")
+        
+        # Get questions to process
+        all_questions = get_questions_list()
+        
         if sr_no_list:
-            total_questions = len(sr_no_list)
+            # Process specific questions
+            questions_to_process = sr_no_list
+            total_questions = len(questions_to_process)
             status_placeholder.info(f"Processing {total_questions} selected questions...")
+        elif not load_all_fresh and already_processed:
+            # Complete remaining questions
+            all_sr_nos = [q[0] for q in all_questions]  # Extract sr_no from questions list
+            remaining_questions = [sr for sr in all_sr_nos if sr not in already_processed]
+            questions_to_process = remaining_questions
+            total_questions = len(remaining_questions)
+            status_placeholder.info(f"Processing {total_questions} remaining questions out of {len(all_questions)} total...")
         else:
-            # Estimate number of questions
-            questions = get_questions_list()
-            total_questions = len(questions)
-            status_placeholder.info(f"Processing all {total_questions} questions...")
+            # Process all questions
+            total_questions = len(all_questions)
+            questions_to_process = None  # None means process all
+            status_placeholder.info(f"Processing all {total_questions} questions{' from scratch' if load_all_fresh else ''}...")
         
         # Store in session state for progress tracking
         st.session_state.question_progress = {
             "current": 0,
             "total": total_questions,
-            "processing": True
+            "processing": True,
+            "mode": "selected" if sr_no_list else ("remaining" if not load_all_fresh and already_processed else "all")
         }
         
         # Start timer
         start_time = time.time()
         
-        # Create a callback for progress updates
+        # Create a callback for progress updates (not used directly, but helpful for future enhancements)
         def update_progress(current, total=total_questions):
             progress = min(current / total, 1.0)
             progress_bar.progress(progress)
-            status_placeholder.info(f"Processing question {current}/{total}...")
+            mode = st.session_state.question_progress.get("mode", "")
+            if mode == "selected":
+                message = f"Processing selected question {current}/{total}..."
+            elif mode == "remaining":
+                message = f"Processing remaining question {current}/{total}..."
+            else:
+                message = f"Processing question {current}/{total}..."
+            status_placeholder.info(message)
             # Update session state
             st.session_state.question_progress["current"] = current
-        
-        # Now modify the agent's process_questions to accept a callback
-        # Since we can't directly modify the original function, we'll handle progress here
         
         # Process questions
         results_df = st.session_state.agent.process_questions(
             load_all_fresh=load_all_fresh, 
-            sr_no_list=sr_no_list
+            sr_no_list=questions_to_process  # Pass the specific questions to process
         )
         
         # Mark as complete
@@ -350,8 +377,18 @@ def process_questions(sr_no_list=None, load_all_fresh=False):
         st.session_state.last_operation_time = end_time - start_time
         st.session_state.operation_status = "Success"
         
-        # Update status
-        status_placeholder.success(f"Processing completed in {end_time - start_time:.2f} seconds. {len(results_df) if results_df is not None else 0} results generated.")
+        # Update status with appropriate message based on mode
+        mode = st.session_state.question_progress.get("mode", "")
+        if mode == "selected":
+            status_placeholder.success(f"Processed {total_questions} selected questions in {end_time - start_time:.2f} seconds.")
+        elif mode == "remaining":
+            status_placeholder.success(f"Processed {total_questions} remaining questions in {end_time - start_time:.2f} seconds.")
+        else:
+            if load_all_fresh:
+                status_placeholder.success(f"Processed all {total_questions} questions from scratch in {end_time - start_time:.2f} seconds.")
+            else:
+                status_placeholder.success(f"Processed {total_questions} questions in {end_time - start_time:.2f} seconds.")
+                
         return True
     except Exception as e:
         st.error(f"Error processing questions: {e}")
