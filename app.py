@@ -697,7 +697,7 @@ def display_category_heatmap(category_data, selected_category):
 # Main app layout
 def main():
     # Header
-    st.markdown('<p class="main-header">Corporate Governance Scoring System</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">AgentEval - Corporate Governance Scoring System</p>', unsafe_allow_html=True)
     
     # Sidebar
     st.sidebar.markdown('## Configuration')
