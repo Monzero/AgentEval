@@ -291,6 +291,7 @@ def setup_agent():
         st.session_state.operation_status = "Error"
         return False
 
+
 def process_questions(sr_no_list=None, load_all_fresh=False):
     """Process questions from prompts.csv"""
     if not st.session_state.agent or not st.session_state.setup_done:
@@ -312,26 +313,26 @@ def process_questions(sr_no_list=None, load_all_fresh=False):
             total_questions = len(questions)
             status_placeholder.info(f"Processing all {total_questions} questions...")
         
+        # Store in session state for progress tracking
+        st.session_state.question_progress = {
+            "current": 0,
+            "total": total_questions,
+            "processing": True
+        }
+        
         # Start timer
         start_time = time.time()
         
-        # Create a function to update progress
-        current_question = 0
-        
-        def progress_callback():
-            nonlocal current_question
-            current_question += 1
-            progress = min(current_question / total_questions, 1.0)
+        # Create a callback for progress updates
+        def update_progress(current, total=total_questions):
+            progress = min(current / total, 1.0)
             progress_bar.progress(progress)
-            status_placeholder.info(f"Processing question {current_question}/{total_questions}...")
+            status_placeholder.info(f"Processing question {current}/{total}...")
+            # Update session state
+            st.session_state.question_progress["current"] = current
         
-        # Original function doesn't have callback, so we'll simulate it
-        # by setting up a background execution and periodic checks
-        
-        # Start processing in session state to track it
-        st.session_state.processing_started = True
-        st.session_state.processing_complete = False
-        st.session_state.processing_error = None
+        # Now modify the agent's process_questions to accept a callback
+        # Since we can't directly modify the original function, we'll handle progress here
         
         # Process questions
         results_df = st.session_state.agent.process_questions(
@@ -340,7 +341,8 @@ def process_questions(sr_no_list=None, load_all_fresh=False):
         )
         
         # Mark as complete
-        st.session_state.processing_complete = True
+        progress_bar.progress(1.0)
+        st.session_state.question_progress["processing"] = False
         st.session_state.last_result = results_df
         
         # Update stats
@@ -349,7 +351,6 @@ def process_questions(sr_no_list=None, load_all_fresh=False):
         st.session_state.operation_status = "Success"
         
         # Update status
-        progress_bar.progress(1.0)
         status_placeholder.success(f"Processing completed in {end_time - start_time:.2f} seconds. {len(results_df) if results_df is not None else 0} results generated.")
         return True
     except Exception as e:
@@ -357,6 +358,8 @@ def process_questions(sr_no_list=None, load_all_fresh=False):
         logger.error(f"Error processing questions: {e}")
         st.session_state.operation_status = "Error"
         st.session_state.processing_error = str(e)
+        # Reset processing flag
+        st.session_state.question_progress["processing"] = False
         return False
 
 def score_topic(topic_no):
@@ -744,12 +747,82 @@ def main():
         help="Method used to retrieve information from documents"
     )
     
-    # Initialize agent button
+    # Alternative: Using an info box instead of expander for more visibility
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("## LLM Configuration")
+
+    # Add explanation as an info box
+    st.sidebar.info("""
+    **LLM Selection Note:** This selection applies only to scoring and guardrail agents. 
+    Document querying and PDF processing always use Gemini models.
+    """)
+
+    # Provider selection
+    model_provider = st.sidebar.selectbox(
+        "Model Provider for Scoring & Guardrails",  # Updated label
+        options=["ollama", "gemini"],
+        index=0,  # Default to ollama
+        help="Select which LLM provider to use for scoring and guardrail agents. Ollama runs locally, Gemini uses Google's API."
+    )
+    
+    # Model selection depends on provider
+    if model_provider == "ollama":
+        model_options = ["llama3", "deepseek-R1", "dolphin-2.2.1", "mistral", "llama3-70b"]
+        selected_model = st.sidebar.selectbox(
+            "Ollama Model",
+            options=model_options,
+            index=0,  # Default to first option (llama3)
+            help="Select which local Ollama model to use for scoring and analysis"
+        )
+    else:
+        gemini_options = ["gemini-1.5-flash", "gemini-1.5-pro"]
+        selected_gemini = st.sidebar.selectbox(
+            "Gemini Model",
+            options=gemini_options,
+            index=0,  # Default to first option (gemini-1.5-flash)
+            help="Select which Gemini model to use for scoring and analysis"
+        )
+
+
+
+    # If Gemini is selected, show a cautionary note about API usage/costs
+    if model_provider == "gemini":
+        st.sidebar.warning("""
+        **Note:** Using Gemini requires a valid Google API key and may incur costs based on usage.
+        Make sure your API key is properly configured in the environment.
+        """)
+    
+    
+        # Use this when initializing the agent
     if st.sidebar.button("Initialize Agent"):
         if not selected_company:
             st.sidebar.error("Please select a company")
         else:
-            init_agent(selected_company, retrieval_method)
+            # Create config
+            config = CGSConfig(selected_company, base_path)
+            
+            # Set model configuration
+            config.model_provider = model_provider
+            if model_provider == "ollama":
+                config.model_to_use = selected_model
+            else:
+                config.gemini_model = selected_gemini
+                
+            # Set retrieval method
+            config.retrieval_method = retrieval_method
+            
+            # Update session state
+            st.session_state.config = config
+            
+            # Initialize agent
+            agent = CorporateGovernanceAgent(selected_company, base_path=base_path, config=config)
+            st.session_state.agent = agent
+            
+            # Show confirmation
+            if model_provider == "ollama":
+                st.sidebar.success(f"Agent initialized with Ollama model: {selected_model}")
+            else:
+                st.sidebar.success(f"Agent initialized with Gemini model: {selected_gemini}")
     
     # Setup agent button
     if st.sidebar.button("Setup Agent"):
@@ -779,17 +852,35 @@ def main():
     ])
     
     # Tab 1: Process Questions
+    # Tab 1: Process Questions
     with tab1:
         st.markdown('<p class="section-header">Process Questions</p>', unsafe_allow_html=True)
         
         if not st.session_state.agent or not st.session_state.setup_done:
             st.warning("Please initialize and setup the agent first.")
         else:
-            # Option selection
+            # Status indicators
+            status_container = st.empty()
+            progress_container = st.empty()
+            
+            # Option selection with improved labels
             process_option = st.radio(
                 "Select processing option:",
-                ["Process All Questions", "Process Selected Questions", "Process Fresh (All Questions)"]
+                [
+                    "Complete Remaining Questions", 
+                    "Process Selected Questions", 
+                    "Process All Questions Fresh (Overwrite Existing)"
+                ],
+                help="Choose how to process questions from prompts.csv"
             )
+            
+            # Help text explanation
+            if process_option == "Complete Remaining Questions":
+                st.info("This will process only questions that haven't been processed yet, preserving existing results.")
+            elif process_option == "Process Selected Questions":
+                st.info("This will process only the specific questions you select, preserving other existing results.")
+            elif process_option == "Process All Questions Fresh (Overwrite Existing)":
+                st.warning("This will process all questions from scratch, potentially overwriting existing results.")
             
             if process_option == "Process Selected Questions":
                 # Get questions list
@@ -808,18 +899,179 @@ def main():
                     # Extract sr_no from selected questions
                     selected_sr_nos = [int(q.split(':')[0]) for q in selected_questions]
             
+            # Add a counter to session state if it doesn't exist
+            if 'question_progress' not in st.session_state:
+                st.session_state.question_progress = {"current": 0, "total": 0, "processing": False}
+            
             # Process button
-            if st.button("Start Processing"):
-                if process_option == "Process All Questions":
-                    process_questions()
-                elif process_option == "Process Selected Questions":
-                    if not selected_sr_nos:
-                        st.error("Please select at least one question")
-                    else:
-                        process_questions(sr_no_list=selected_sr_nos)
-                elif process_option == "Process Fresh (All Questions)":
-                    process_questions(load_all_fresh=True)
+            if st.button("Start Processing", key="process_button"):
+                # Set processing flag
+                st.session_state.question_progress["processing"] = True
+                
+                # Show initial status
+                status_container.info("Preparing to process questions...")
+                progress_container.progress(0)
+                
+                try:
+                    if process_option == "Complete Remaining Questions":
+                        # Get total questions for progress tracking
+                        all_questions = get_questions_list()
+                        total_questions = len(all_questions)
+                        st.session_state.question_progress["total"] = total_questions
+                        
+                        # Create a placeholder for results to watch
+                        results_path = os.path.join(st.session_state.agent.config.results_path, 'prompts_result.csv')
+                        if os.path.exists(results_path):
+                            initial_results = pd.read_csv(results_path)
+                            initial_count = len(initial_results)
+                        else:
+                            initial_count = 0
+                        
+                        # Start processing in background
+                        status_container.info(f"Processing remaining questions...")
+                        
+                        # Call the process function
+                        process_questions()
+                        
+                        # Check results file periodically to update progress
+                        for i in range(10):  # Check up to 10 times
+                            time.sleep(3)  # Wait 3 seconds between checks
+                            if os.path.exists(results_path):
+                                try:
+                                    current_results = pd.read_csv(results_path)
+                                    current_count = len(current_results)
+                                    progress = min(current_count - initial_count, total_questions) / total_questions
+                                    progress_container.progress(progress)
+                                    status_container.info(f"Processed {current_count - initial_count} new questions so far...")
+                                except Exception as e:
+                                    logger.error(f"Error checking results file: {e}")
+                                    pass
+                        
+                        # Final update
+                        progress_container.progress(1.0)
+                        status_container.success("Processing completed!")
+                        
+                        # Show results summary
+                        if os.path.exists(results_path):
+                            try:
+                                final_results = pd.read_csv(results_path)
+                                new_count = len(final_results) - initial_count
+                                if new_count > 0:
+                                    st.success(f"Processed {new_count} new questions. Total results: {len(final_results)}")
+                                else:
+                                    st.success(f"All questions were already processed! Total results: {len(final_results)}")
+                                
+                                # Add a button to view results
+                                if st.button("View Processed Results"):
+                                    st.session_state.active_tab = "View Results"
+                                    st.rerun()
+                            except Exception as e:
+                                logger.error(f"Error reading final results: {e}")
+                                st.error("Error reading results file.")
+                    
+                    elif process_option == "Process Selected Questions":
+                        if not selected_sr_nos:
+                            status_container.error("Please select at least one question")
+                        else:
+                            # Update progress tracking
+                            st.session_state.question_progress["total"] = len(selected_sr_nos)
+                            
+                            status_container.info(f"Processing {len(selected_sr_nos)} selected questions...")
+                            
+                            # Process selected questions
+                            process_questions(sr_no_list=selected_sr_nos)
+                            
+                            # Final update
+                            progress_container.progress(1.0)
+                            status_container.success(f"Processed {len(selected_sr_nos)} selected questions!")
+                            
+                            # Add a button to view results
+                            if st.button("View Results"):
+                                st.session_state.active_tab = "View Results"
+                                st.rerun()
+                    
+                    elif process_option == "Process All Questions Fresh (Overwrite Existing)":
+                        # Get total questions for progress tracking
+                        all_questions = get_questions_list()
+                        total_questions = len(all_questions)
+                        st.session_state.question_progress["total"] = total_questions
+                        
+                        status_container.info(f"Processing all {total_questions} questions from scratch...")
+                        
+                        # Process questions from scratch
+                        process_questions(load_all_fresh=True)
+                        
+                        # Final update
+                        progress_container.progress(1.0)
+                        status_container.success(f"Processed all {total_questions} questions from scratch!")
+                        
+                        # Add a button to view results
+                        if st.button("View Results"):
+                            st.session_state.active_tab = "View Results"
+                            st.rerun()
+                    
+                    # Clear processing flag
+                    st.session_state.question_progress["processing"] = False
+                    
+                except Exception as e:
+                    status_container.error(f"Error during processing: {str(e)}")
+                    st.session_state.question_progress["processing"] = False
+                    logger.error(f"Process questions error: {e}")
+                
+            # Display current processing status (for page reloads)
+            elif st.session_state.question_progress.get("processing", False):
+                status_container.info(f"Processing questions... (Please wait)")
+                current = st.session_state.question_progress.get("current", 0)
+                total = max(1, st.session_state.question_progress.get("total", 1))
+                progress = min(current / total, 1.0)
+                progress_container.progress(progress)
+                st.info("If processing appears stuck, you may need to restart it.")
+            
+            # Add a separator
+            st.markdown("---")
+            
+            # Show processing statistics if available
+            if hasattr(st.session_state, 'last_operation_time') and st.session_state.last_operation_time:
+                st.markdown("### Last Processing Statistics")
+                stats_cols = st.columns(2)
+                with stats_cols[0]:
+                    st.metric("Time Taken", f"{st.session_state.last_operation_time:.2f} sec")
+                with stats_cols[1]:
+                    status = st.session_state.get('operation_status', 'None')
+                    st.metric("Status", status)
+                
+                # Show error if any
+                if hasattr(st.session_state, 'processing_error') and st.session_state.processing_error:
+                    st.error(f"Error details: {st.session_state.processing_error}")
+            
+            # Add documentation
+            with st.expander("How Processing Works", expanded=False):
+                st.markdown("""
+                ### Understanding Question Processing
+                
+                1. **Complete Remaining Questions**:
+                - Only processes questions that haven't been processed before
+                - Preserves existing results for previously processed questions
+                - Good for incrementally building up your dataset
+                
+                2. **Process Selected Questions**:
+                - Processes only the specific questions you select
+                - Allows targeting specific areas of interest
+                - Useful for testing or updating specific sections
+                
+                3. **Process All Questions Fresh**:
+                - Processes ALL questions from scratch
+                - Overwrites any existing results
+                - Use when changing models, retrieval methods, or starting fresh
+                
+                ### Troubleshooting
+                
+                - If processing appears stuck, you may need to restart it
+                - Check logs for detailed error messages if issues occur
+                - Ensure all necessary files and directories exist
+                """)
     
+        
     # Tab 2: Score Topics
     with tab2:
         st.markdown('<p class="section-header">Score Topics</p>', unsafe_allow_html=True)

@@ -65,7 +65,11 @@ class CGSConfig:
         os.makedirs(self.results_path, exist_ok=True)
         
         # Model configuration
-        self.model_to_use = 'llama3'
+        # self.model_to_use = 'llama3'
+        # Model configuration
+        self.model_provider = "ollama"  # Options: "ollama", "gemini"
+        self.model_to_use = 'llama3'    # For Ollama
+        self.gemini_model = "gemini-1.5-flash"  # For Gemini
         # Alternative: self.model_to_use = 'deepseek-R1'
         
         # API keys - in a production environment, these should be loaded securely
@@ -401,15 +405,23 @@ class QueryEngine:
     def setup_llm_clients(self):
         """Set up LLM clients for querying"""
         try:
-            # Initialize Ollama client
-            self.ollama = OllamaLLM(model=self.config.model_to_use)
-            logger.info(f"Initialized Ollama with model {self.config.model_to_use}")
+            # Check which provider is configured
+            if self.config.model_provider == "ollama":
+                try:
+                    # Initialize Ollama client
+                    self.ollama = OllamaLLM(model=self.config.model_to_use)
+                    logger.info(f"Initialized Ollama with model {self.config.model_to_use}")
+                except Exception as e:
+                    logger.error(f"Error initializing Ollama: {e}")
+                    logger.warning("Falling back to Gemini for all operations")
+                    self.config.model_provider = "gemini"
             
-            # Initialize Gemini client
-            self.gemini = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
-            logger.info("Initialized Gemini client")
+            # Always initialize Gemini client (used for PDF processing regardless of provider)
+            self.gemini = ChatGoogleGenerativeAI(model=self.config.gemini_model)
+            logger.info(f"Initialized Gemini client with model {self.config.gemini_model}")
         except Exception as e:
             logger.error(f"Error initializing LLM clients: {e}")
+    
     
     def query_document(self, document_path: str, prompt: str, use_rag: bool = True):
         """Query a document with a given prompt"""
@@ -957,26 +969,246 @@ class QueryEngine:
             # Fallback to simple text response if PDF processing fails
             return f"Error processing document with Gemini. The error was: {str(e)}"
                         
+# class GuardrailAgent:
+#     """Handles verification of LLM outputs"""
+    
+#     def __init__(self, config: CGSConfig):
+#         self.config = config
+        
+#         # Initialize LLM
+#         try:
+#             from langchain_ollama import OllamaLLM 
+#             self.ollama = OllamaLLM(model=config.model_to_use)
+#             logger.info(f"Initialized Ollama with model {config.model_to_use}")
+#         except Exception as e:
+#             logger.error(f"Error initializing Ollama: {e}")
+#             self.ollama = None  # Ensure attribute exists even if initialization fails
+    
+#     def verify_answer_quality(self, query: str, answer: str) -> Dict[str, str]:
+#         """Verify if the answer is good quality and has proper citations with robust parsing"""
+        
+#         if not hasattr(self, 'ollama') or self.ollama is None:
+#             logger.warning("Ollama LLM not available, using simplified verification")
+#             # Simple fallback checks
+#             got_answer = "no" if "could not process document" in answer.lower() or "error" in answer.lower() else "yes"
+#             source_mentioned = "yes" if "page" in answer.lower() or "source" in answer.lower() else "no"
+#             return {"got_answer": got_answer, "source_mentioned": source_mentioned}
+        
+#         # Define the output schema
+#         class GuardrailOutput(BaseModel):
+#             got_answer: str = Field(description="Whether the LLM provided a substantive answer to the query (yes/no)")
+#             source_mentioned: str = Field(description="Whether the answer mentions page numbers or specific sections (yes/no)")
+            
+#         # Create custom format instructions
+#         custom_format_instructions = """
+#         You must respond with a valid JSON object using exactly this format:
+#         {
+#             "got_answer": "<yes_or_no>",
+#             "source_mentioned": "<yes_or_no>"
+#         }
+        
+#         Both values must be either "yes" or "no" (lowercase).
+#         Do not include any other text, explanation, or formatting outside of this JSON object.
+#         """
+        
+#         # Create the prompt
+#         prompt = ChatPromptTemplate.from_template(
+#             """
+#             You are a smart LLM output assessor. 
+#             We asked following query to one LLM: {query}
+            
+#             The LLM came up with the following answer: {answer}
+            
+#             Evaluate the quality of this answer based on two criteria:
+#             1. Did the LLM actually provide a substantive answer to the query, or did it fail to address the question?
+#             2. Does the answer include references to specific page numbers, sections, or documents to support its claims?
+            
+#             To be considered reliable, the answer should cite specific sources, such as "From the annual report page XX, we found that..."
+            
+#             {format_instructions}
+            
+#             Remember: Your response must be ONLY a valid JSON object with the keys "got_answer" and "source_mentioned".
+#             """
+#         )
+        
+#         try:
+#             # Try the chain approach
+#             raw_result = self.ollama.invoke(prompt.format(
+#                 query=query,
+#                 answer=answer,
+#                 format_instructions=custom_format_instructions
+#             ))
+            
+#             logger.info("Received guardrail assessment, attempting to parse")
+            
+#             # Try multiple parsing approaches
+#             try:
+#                 # Attempt 1: Direct JSON parsing
+#                 if isinstance(raw_result, str):
+#                     # Clean the string to extract just the JSON part
+#                     cleaned_result = raw_result.strip()
+#                     json_start = cleaned_result.find('{')
+#                     json_end = cleaned_result.rfind('}') + 1
+                    
+#                     if json_start >= 0 and json_end > json_start:
+#                         json_str = cleaned_result[json_start:json_end]
+#                         result_dict = json.loads(json_str)
+#                     else:
+#                         # If no JSON delimiters found, try the whole string
+#                         result_dict = json.loads(cleaned_result)
+#                 elif isinstance(raw_result, dict):
+#                     # Already a dictionary
+#                     result_dict = raw_result
+#                 else:
+#                     # Try to access as object attributes
+#                     result_dict = {
+#                         "got_answer": getattr(raw_result, "got_answer", "no"),
+#                         "source_mentioned": getattr(raw_result, "source_mentioned", "no")
+#                     }
+                    
+#                 # Normalize values to ensure "yes" or "no"
+#                 for key in ["got_answer", "source_mentioned"]:
+#                     if key not in result_dict:
+#                         result_dict[key] = "no"
+#                     else:
+#                         # Normalize to lowercase yes/no
+#                         value = str(result_dict[key]).lower().strip()
+#                         if value in ["1", "true", "yes", "y"]:
+#                             result_dict[key] = "yes"
+#                         else:
+#                             result_dict[key] = "no"
+                            
+#                 logger.info(f"Successfully parsed guardrail result: {result_dict}")
+#                 return result_dict
+                    
+#             except Exception as parsing_error:
+#                 logger.warning(f"Initial parsing failed: {parsing_error}, trying regex fallback")
+                
+#                 # Attempt 2: Use regex to extract JSON
+#                 import re
+#                 json_pattern = r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}'
+#                 matches = re.findall(json_pattern, raw_result, re.DOTALL)
+                
+#                 if matches:
+#                     for potential_json in matches:
+#                         try:
+#                             result_dict = json.loads(potential_json)
+#                             if "got_answer" in result_dict or "source_mentioned" in result_dict:
+#                                 # Normalize values
+#                                 for key in ["got_answer", "source_mentioned"]:
+#                                     if key not in result_dict:
+#                                         result_dict[key] = "no"
+#                                     else:
+#                                         value = str(result_dict[key]).lower().strip()
+#                                         result_dict[key] = "yes" if value in ["1", "true", "yes", "y"] else "no"
+                                        
+#                                 logger.info(f"Regex extraction successful: {result_dict}")
+#                                 return result_dict
+#                         except json.JSONDecodeError:
+#                             continue
+                            
+#                 # Attempt 3: Basic text analysis if JSON extraction failed
+#                 got_answer = "yes" if any(x in raw_result.lower() for x in [
+#                     "provided a substantive answer",
+#                     "addresses the query",
+#                     "answered the question",
+#                     "got_answer\": \"yes",
+#                     "got_answer\":\"yes"
+#                 ]) else "no"
+                
+#                 source_mentioned = "yes" if any(x in raw_result.lower() for x in [
+#                     "includes references",
+#                     "cites specific sources",
+#                     "page numbers",
+#                     "mentions sources",
+#                     "source_mentioned\": \"yes",
+#                     "source_mentioned\":\"yes"
+#                 ]) else "no"
+                
+#                 logger.info(f"Text analysis extraction: got_answer={got_answer}, source_mentioned={source_mentioned}")
+#                 return {"got_answer": got_answer, "source_mentioned": source_mentioned}
+                
+#         except Exception as e:
+#             logger.error(f"Error in guardrail verification: {e}")
+                
+#         # Simple fallback if all else fails
+#         got_answer = "no" if "could not process document" in answer.lower() or "error" in answer.lower() else "yes"
+#         source_mentioned = "yes" if "page" in answer.lower() or "source" in answer.lower() else "no"
+        
+#         logger.info(f"Using simple heuristic fallback: got_answer={got_answer}, source_mentioned={source_mentioned}")
+#         return {"got_answer": got_answer, "source_mentioned": source_mentioned}
+    
+#     def modify_query(self, original_query: str, answer: str, issue_type: str) -> str:
+#         """Create a modified query based on issues with the original answer"""
+#         if issue_type == "answer":
+#             prompt = f"""
+#             Original query was: "{original_query}"
+            
+#             However, it could not find the answer. You need to rephrase the question to be clearer
+#             and more specific to help the model find the relevant information.
+            
+#             Provide only the rephrased question with no additional text or explanation.
+#             """
+#         elif issue_type == "source":
+#             prompt = f"""
+#             Original query was: "{original_query}"
+            
+#             The answer was received: "{answer}"
+            
+#             However, it did not include page numbers or section references. Create a follow-up question
+#             that specifically asks for the page numbers or sections where this information can be found.
+            
+#             Provide only the follow-up question with no additional text or explanation.
+#             """
+#         else:
+#             return original_query
+            
+#         try:
+#             modified_query = self.ollama.invoke(prompt)
+#             logger.info(f"Modified query: {modified_query}")
+#             return modified_query.strip()
+#         except Exception as e:
+#             logger.error(f"Error modifying query: {e}")
+#             return original_query
+
 class GuardrailAgent:
     """Handles verification of LLM outputs"""
     
     def __init__(self, config: CGSConfig):
         self.config = config
         
-        # Initialize LLM
+        # Initialize LLMs based on configuration
         try:
-            from langchain_ollama import OllamaLLM 
-            self.ollama = OllamaLLM(model=config.model_to_use)
-            logger.info(f"Initialized Ollama with model {config.model_to_use}")
+            # Initialize Gemini
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            self.gemini = ChatGoogleGenerativeAI(model=config.gemini_model)
+            logger.info(f"Initialized Gemini client with model {config.gemini_model}")
+            
+            # Initialize Ollama if that's the selected provider
+            if config.model_provider == "ollama":
+                try:
+                    from langchain_ollama import OllamaLLM
+                    self.ollama = OllamaLLM(model=config.model_to_use)
+                    logger.info(f"Initialized Ollama with model {config.model_to_use}")
+                except Exception as e:
+                    logger.error(f"Error initializing Ollama: {e}")
+                    logger.warning("Falling back to Gemini for all operations")
+                    self.config.model_provider = "gemini"
         except Exception as e:
-            logger.error(f"Error initializing Ollama: {e}")
-            self.ollama = None  # Ensure attribute exists even if initialization fails
+            logger.error(f"Error initializing LLMs: {e}")
+    
+    def get_guardrail_llm(self):
+        """Get the appropriate LLM for guardrail operations"""
+        if self.config.model_provider == "ollama" and hasattr(self, 'ollama'):
+            return self.ollama
+        else:
+            return self.gemini
     
     def verify_answer_quality(self, query: str, answer: str) -> Dict[str, str]:
         """Verify if the answer is good quality and has proper citations with robust parsing"""
         
-        if not hasattr(self, 'ollama') or self.ollama is None:
-            logger.warning("Ollama LLM not available, using simplified verification")
+        if not hasattr(self, 'gemini'):
+            logger.warning("No LLM available for verification, using simplified checks")
             # Simple fallback checks
             got_answer = "no" if "could not process document" in answer.lower() or "error" in answer.lower() else "yes"
             source_mentioned = "yes" if "page" in answer.lower() or "source" in answer.lower() else "no"
@@ -1020,8 +1252,11 @@ class GuardrailAgent:
         )
         
         try:
+            # Get the appropriate LLM
+            llm = self.get_guardrail_llm()
+            
             # Try the chain approach
-            raw_result = self.ollama.invoke(prompt.format(
+            raw_result = llm.invoke(prompt.format(
                 query=query,
                 answer=answer,
                 format_instructions=custom_format_instructions
@@ -1152,7 +1387,10 @@ class GuardrailAgent:
             return original_query
             
         try:
-            modified_query = self.ollama.invoke(prompt)
+            # Get the appropriate LLM
+            llm = self.get_guardrail_llm()
+            
+            modified_query = llm.invoke(prompt)
             logger.info(f"Modified query: {modified_query}")
             return modified_query.strip()
         except Exception as e:
@@ -1165,15 +1403,30 @@ class ScoringAgent:
     def __init__(self, config: CGSConfig):
         self.config = config
         
-        # Initialize LLM
+        # Initialize LLMs based on configuration
         try:
-            self.ollama = OllamaLLM(model=config.model_to_use)
-            logger.info(f"Initialized Ollama with model {config.model_to_use}")
+            # Always initialize Gemini as it's needed for various functions
+            self.gemini = ChatGoogleGenerativeAI(model=config.gemini_model)
+            logger.info(f"Initialized Gemini client with model {config.gemini_model}")
             
-            self.gemini = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
-            logger.info("Initialized Gemini client")
+            # Initialize Ollama if that's the selected provider
+            if config.model_provider == "ollama":
+                try:
+                    self.ollama = OllamaLLM(model=config.model_to_use)
+                    logger.info(f"Initialized Ollama with model {config.model_to_use}")
+                except Exception as e:
+                    logger.error(f"Error initializing Ollama: {e}")
+                    logger.warning("Falling back to Gemini for all operations")
+                    self.config.model_provider = "gemini"
         except Exception as e:
             logger.error(f"Error initializing LLMs: {e}")
+    
+    def get_scoring_llm(self):
+        """Get the appropriate LLM for scoring based on configuration"""
+        if self.config.model_provider == "ollama" and hasattr(self, 'ollama'):
+            return self.ollama
+        else:
+            return self.gemini
     
     def postprocess_content(self, question_no: int, content: str) -> str:
         """Apply special post-processing to certain questions"""
@@ -1214,79 +1467,6 @@ class ScoringAgent:
             logger.error(f"Error in content post-processing: {e}")
             return content
     
-    def score_answer_unused(self, scoring_criteria: str, content: str) -> Dict[str, Union[int, str]]:
-        """Score the content based on provided criteria"""
-        
-        # Define the output schema
-        class ScoreOutput(BaseModel):
-            score: int = Field(description="Score based on the criteria (integer)")
-            justification: str = Field(description="Detailed justification for the score")
-            
-        parser = JsonOutputParser(pydantic_object=ScoreOutput)
-        
-        # Create the prompt
-        prompt = ChatPromptTemplate.from_template(
-            """
-            You are a corporate governance scoring expert.
-            
-            You need to score the following content based on specific criteria.
-            
-            Scoring Criteria:
-            {scoring_criteria}
-            
-            Content to Score:
-            {content}
-            
-            Important guidelines:
-            - Do not assume any details not present in the content
-            - If relevant information is missing, score should be 0
-            - Include specific references to page numbers and document names in your justification
-            - Be thorough in explaining why the content meets or fails to meet the criteria
-            
-            {format_instructions}
-            """
-        )
-        
-        # Create the chain
-        chain = (
-            {"scoring_criteria": lambda x: x[0], 
-             "content": lambda x: x[1],
-             "format_instructions": lambda _: parser.get_format_instructions()}
-            | prompt
-            | self.ollama
-            | parser
-        )
-        
-        try:
-            # Run the chain
-            result = chain.invoke([scoring_criteria, content])
-            logger.info(f"Scoring results: score={result.score}")
-            return {"score": result.score, "justification": result.justification}
-        except Exception as e:
-            logger.error(f"Error in scoring: {e}")
-            
-            # Fallback to regex parsing if JSON parsing fails
-            try:
-                raw_result = self.ollama.invoke(prompt.format(
-                    scoring_criteria=scoring_criteria,
-                    content=content,
-                    format_instructions=parser.get_format_instructions()
-                ))
-                
-                # Try to extract JSON with regex
-                match = re.search(r'\{.*\}', raw_result, re.DOTALL)
-                if match:
-                    response = json.loads(match.group())
-                    return {
-                        "score": response.get('score', 0),
-                        "justification": response.get('justification', 'Could not determine justification')
-                    }
-            except:
-                pass
-                
-            # Default fallback
-            return {"score": 0, "justification": f"Error in scoring: {str(e)}"}
-
     def score_answer(self, scoring_criteria: str, content: str) -> Dict[str, Union[int, str]]:
         """Score the content based on provided criteria with robust error handling"""
         
@@ -1336,20 +1516,22 @@ class ScoringAgent:
             """
         )
         
+        # Get the appropriate LLM
+        llm = self.get_scoring_llm()
+        
         # Create the chain with format instructions
         chain = (
             {"scoring_criteria": lambda x: x[0], 
             "content": lambda x: x[1],
             "format_instructions": lambda _: custom_format_instructions}
             | prompt
-            | self.ollama
+            | llm
         )
         
         try:
             # First attempt: Run the chain and try structured parsing
             raw_result = chain.invoke([scoring_criteria, content])
             logger.info(f"Raw scoring result received, attempting to parse...")
-            print(raw_result)
             
             # Try multiple parsing approaches
             try:
@@ -1453,7 +1635,7 @@ class ScoringAgent:
             Example: {{"score": 5, "justification": "Explanation here"}}
             """
             
-            simple_result = self.ollama.invoke(simple_prompt)
+            simple_result = llm.invoke(simple_prompt)
             
             # Try to extract JSON
             import re
@@ -1484,6 +1666,332 @@ class ScoringAgent:
             "score": 0,
             "justification": "Failed to parse the scoring result. The scoring system encountered technical issues."
         }
+
+# class ScoringAgent:
+#     """Handles scoring of answers based on defined criteria"""
+    
+#     def __init__(self, config: CGSConfig):
+#         self.config = config
+        
+#         # Initialize LLM
+#         try:
+#             self.ollama = OllamaLLM(model=config.model_to_use)
+#             logger.info(f"Initialized Ollama with model {config.model_to_use}")
+            
+#             self.gemini = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+#             logger.info("Initialized Gemini client")
+#         except Exception as e:
+#             logger.error(f"Error initializing LLMs: {e}")
+    
+#     def postprocess_content(self, question_no: int, content: str) -> str:
+#         """Apply special post-processing to certain questions"""
+#         # Only question 12 has special processing in the original code
+#         if question_no != 12:
+#             return content
+            
+#         # Special processing for question 12 (royalty transactions)
+#         prompt = ChatPromptTemplate.from_template(
+#             """
+#             This context has information about related party transactions.
+            
+#             Please analyze the content and:
+#             1. Identify and filter all transactions related to Royalty payments
+#             2. Calculate the total amount of these Royalty transactions
+#             3. Compare this total to the company's profit, which should be mentioned in the content
+#             4. If royalty is not mentioned, assume it is 0
+            
+#             Context: {content}
+            
+#             Provide a detailed analysis with specific amounts and percentages.
+#             """
+#         )
+        
+#         # Create chain
+#         chain = (
+#             {"content": lambda x: x}
+#             | prompt
+#             | self.gemini
+#             | StrOutputParser()
+#         )
+        
+#         try:
+#             processed_content = chain.invoke(content)
+#             logger.info(f"Post-processed content for question {question_no}")
+#             return processed_content
+#         except Exception as e:
+#             logger.error(f"Error in content post-processing: {e}")
+#             return content
+    
+#     def score_answer_unused(self, scoring_criteria: str, content: str) -> Dict[str, Union[int, str]]:
+#         """Score the content based on provided criteria"""
+        
+#         # Define the output schema
+#         class ScoreOutput(BaseModel):
+#             score: int = Field(description="Score based on the criteria (integer)")
+#             justification: str = Field(description="Detailed justification for the score")
+            
+#         parser = JsonOutputParser(pydantic_object=ScoreOutput)
+        
+#         # Create the prompt
+#         prompt = ChatPromptTemplate.from_template(
+#             """
+#             You are a corporate governance scoring expert.
+            
+#             You need to score the following content based on specific criteria.
+            
+#             Scoring Criteria:
+#             {scoring_criteria}
+            
+#             Content to Score:
+#             {content}
+            
+#             Important guidelines:
+#             - Do not assume any details not present in the content
+#             - If relevant information is missing, score should be 0
+#             - Include specific references to page numbers and document names in your justification
+#             - Be thorough in explaining why the content meets or fails to meet the criteria
+            
+#             {format_instructions}
+#             """
+#         )
+        
+#         # Create the chain
+#         chain = (
+#             {"scoring_criteria": lambda x: x[0], 
+#              "content": lambda x: x[1],
+#              "format_instructions": lambda _: parser.get_format_instructions()}
+#             | prompt
+#             | self.ollama
+#             | parser
+#         )
+        
+#         try:
+#             # Run the chain
+#             result = chain.invoke([scoring_criteria, content])
+#             logger.info(f"Scoring results: score={result.score}")
+#             return {"score": result.score, "justification": result.justification}
+#         except Exception as e:
+#             logger.error(f"Error in scoring: {e}")
+            
+#             # Fallback to regex parsing if JSON parsing fails
+#             try:
+#                 raw_result = self.ollama.invoke(prompt.format(
+#                     scoring_criteria=scoring_criteria,
+#                     content=content,
+#                     format_instructions=parser.get_format_instructions()
+#                 ))
+                
+#                 # Try to extract JSON with regex
+#                 match = re.search(r'\{.*\}', raw_result, re.DOTALL)
+#                 if match:
+#                     response = json.loads(match.group())
+#                     return {
+#                         "score": response.get('score', 0),
+#                         "justification": response.get('justification', 'Could not determine justification')
+#                     }
+#             except:
+#                 pass
+                
+#             # Default fallback
+#             return {"score": 0, "justification": f"Error in scoring: {str(e)}"}
+
+#     def score_answer(self, scoring_criteria: str, content: str) -> Dict[str, Union[int, str]]:
+#         """Score the content based on provided criteria with robust error handling"""
+        
+#         # Define the output schema
+#         class ScoreOutput(BaseModel):
+#             score: int = Field(description="Score based on the criteria (integer from 0-10)")
+#             justification: str = Field(description="Detailed justification for the score")
+        
+#         # Create a custom explicit formatting instruction
+#         custom_format_instructions = """
+#         You must respond with a valid JSON object using exactly this format:
+#         {
+#             "score": <integer_between_0_and_10>,
+#             "justification": "<detailed_explanation_with_evidence>"
+#         }
+        
+#         The score must be an integer number between 0 and 10.
+#         Do not include any other text, explanation, or formatting outside of this JSON object.
+#         """
+        
+#         # Initialize the parser
+#         parser = JsonOutputParser(pydantic_object=ScoreOutput)
+        
+#         # Create the prompt with explicit formatting instructions
+#         prompt = ChatPromptTemplate.from_template(
+#             """
+#             You are a corporate governance scoring expert.
+            
+#             You need to score the following content based on specific criteria.
+            
+#             Scoring Criteria:
+#             {scoring_criteria}
+            
+#             Content to Score:
+#             {content}
+            
+#             Important guidelines:
+#             - Do not assume any details not present in the content
+#             - If relevant information is missing, score should be 0
+#             - Include specific references to page numbers and document names in your justification
+#             - Be thorough in explaining why the content meets or fails to meet the criteria
+#             - Score must be between 0 and 10, with 10 being the highest
+            
+#             {format_instructions}
+            
+#             Remember: Your response must be ONLY a valid JSON object with the keys "score" (integer) and "justification" (string).
+#             """
+#         )
+        
+#         # Create the chain with format instructions
+#         chain = (
+#             {"scoring_criteria": lambda x: x[0], 
+#             "content": lambda x: x[1],
+#             "format_instructions": lambda _: custom_format_instructions}
+#             | prompt
+#             | self.ollama
+#         )
+        
+#         try:
+#             # First attempt: Run the chain and try structured parsing
+#             raw_result = chain.invoke([scoring_criteria, content])
+#             logger.info(f"Raw scoring result received, attempting to parse...")
+#             print(raw_result)
+            
+#             # Try multiple parsing approaches
+#             try:
+#                 # Attempt 1: Direct JSON parsing of the entire response
+#                 if isinstance(raw_result, str):
+#                     # Clean the string to extract just the JSON part
+#                     cleaned_result = raw_result.strip()
+#                     # If the response has text before/after the JSON, try to extract just the JSON part
+#                     json_start = cleaned_result.find('{')
+#                     json_end = cleaned_result.rfind('}') + 1
+#                     if json_start >= 0 and json_end > json_start:
+#                         json_str = cleaned_result[json_start:json_end]
+#                         result_dict = json.loads(json_str)
+#                     else:
+#                         # If no JSON delimiters found, try parsing the whole string
+#                         result_dict = json.loads(cleaned_result)
+#                 elif isinstance(raw_result, dict):
+#                     # Already a dictionary, use directly
+#                     result_dict = raw_result
+#                 else:
+#                     # Try to access as object attributes
+#                     result_dict = {
+#                         "score": getattr(raw_result, "score", 0),
+#                         "justification": getattr(raw_result, "justification", "No justification provided")
+#                     }
+                    
+#                 # Ensure we have both required fields with correct types
+#                 if "score" not in result_dict:
+#                     result_dict["score"] = 0
+#                 if "justification" not in result_dict:
+#                     result_dict["justification"] = "No justification provided"
+                    
+#                 # Ensure score is an integer
+#                 try:
+#                     result_dict["score"] = int(result_dict["score"])
+#                 except (ValueError, TypeError):
+#                     logger.warning(f"Score was not an integer: {result_dict.get('score')}, defaulting to 0")
+#                     result_dict["score"] = 0
+                    
+#                 # Ensure score is in valid range (0-10)
+#                 if result_dict["score"] < 0 or result_dict["score"] > 10:
+#                     logger.warning(f"Score out of range: {result_dict['score']}, clamping to 0-10")
+#                     result_dict["score"] = max(0, min(10, result_dict["score"]))
+                    
+#                 logger.info(f"Successfully parsed scoring result: score={result_dict['score']}")
+#                 return result_dict
+                
+#             except Exception as parsing_error:
+#                 logger.warning(f"Initial parsing failed: {parsing_error}, trying regex fallback")
+                
+#                 # Attempt 2: Use regex to extract JSON
+#                 import re
+#                 json_pattern = r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}'
+#                 matches = re.findall(json_pattern, raw_result, re.DOTALL)
+                
+#                 if matches:
+#                     for potential_json in matches:
+#                         try:
+#                             result_dict = json.loads(potential_json)
+#                             if "score" in result_dict and "justification" in result_dict:
+#                                 # Ensure score is an integer
+#                                 try:
+#                                     result_dict["score"] = int(result_dict["score"])
+#                                 except (ValueError, TypeError):
+#                                     result_dict["score"] = 0
+                                    
+#                                 # Ensure score is in valid range (0-10)
+#                                 result_dict["score"] = max(0, min(10, result_dict["score"]))
+                                
+#                                 logger.info(f"Regex extraction successful: score={result_dict['score']}")
+#                                 return result_dict
+#                         except json.JSONDecodeError:
+#                             continue
+                
+#                 # Attempt 3: Basic regex to find score if JSON extraction failed
+#                 score_pattern = r'score[^\d]*(\d+)'
+#                 score_match = re.search(score_pattern, raw_result, re.IGNORECASE)
+#                 if score_match:
+#                     score = int(score_match.group(1))
+#                     # Clamp to valid range
+#                     score = max(0, min(10, score))
+#                     logger.info(f"Basic score extraction: {score}")
+#                     return {
+#                         "score": score,
+#                         "justification": f"Extracted from partial parsing. Original output: {raw_result}..."
+#                     }
+#         except Exception as e:
+#             logger.error(f"Error in main scoring process: {e}")
+        
+#         # If all else fails, try a simpler direct approach as final fallback
+#         try:
+#             # Create a much simpler prompt focused just on getting a valid result
+#             simple_prompt = f"""
+#             Rate the following content on a scale of 0-10 based on these criteria:
+#             {scoring_criteria}
+            
+#             Content:
+#             {content}
+            
+#             Respond ONLY with a valid JSON object containing 'score' (integer 0-10) and 'justification' (string).
+#             Example: {{"score": 5, "justification": "Explanation here"}}
+#             """
+            
+#             simple_result = self.ollama.invoke(simple_prompt)
+            
+#             # Try to extract JSON
+#             import re
+#             json_match = re.search(r'\{.*\}', simple_result, re.DOTALL)
+#             if json_match:
+#                 try:
+#                     result_dict = json.loads(json_match.group())
+#                     if "score" in result_dict:
+#                         # Ensure score is an integer in valid range
+#                         try:
+#                             score = int(result_dict["score"])
+#                             score = max(0, min(10, score))
+#                         except (ValueError, TypeError):
+#                             score = 0
+                            
+#                         return {
+#                             "score": score,
+#                             "justification": result_dict.get("justification", "No detailed justification provided.")
+#                         }
+#                 except json.JSONDecodeError:
+#                     pass
+#         except Exception as fallback_error:
+#             logger.error(f"Final fallback failed: {fallback_error}")
+        
+#         # Ultimate fallback - if everything else fails
+#         logger.error(f"All parsing methods failed. Returning default score 0.")
+#         return {
+#             "score": 0,
+#             "justification": "Failed to parse the scoring result. The scoring system encountered technical issues."
+#         }
 
 class CorporateGovernanceAgent:
     """Main agent that orchestrates the entire workflow"""
