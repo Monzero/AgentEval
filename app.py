@@ -1662,7 +1662,7 @@ def main():
     st.markdown("---")
     st.markdown(
         "<div style='text-align: center; padding: 20px; background-color: #f5f5f5; border-radius: 10px; margin-top: 30px;'>"
-        "<p style='font-size: 16px; font-weight: bold; color: #4B5563;'>Made with ♥️ by Monil Shah</p>"
+        "<p style='font-size: 16px; font-weight: bold; color: #4B5563;'>Made with ♥️ by Monil Shah & Supriya Jadhav</p>"
         "<p style='font-size: 12px; color: #6B7280;'>Corporate Governance Scoring System © 2025</p>"
         "</div>", 
         unsafe_allow_html=True
