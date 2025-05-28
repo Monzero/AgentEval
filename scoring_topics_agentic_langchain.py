@@ -51,7 +51,7 @@ class CGSConfig:
         if base_path:
             self.base_path = base_path
         else:
-            self.base_path = f'/Users/monilshah/Documents/02_NWU/01_capstone/06_Code/{company_sym}/'
+            self.base_path = f'/Users/monilshah/Documents/GitHub/AgentEval/{company_sym}/'
         
         # Define paths
         self.data_path = os.path.join(self.base_path, '98_data/')
@@ -233,10 +233,15 @@ class DocumentProcessor:
             # Use a lighter embedding model if possible
             try:
                 # First try a local, lightweight model
-                embeddings = OllamaEmbeddings(model="llama3", embed_dim=384)  # Smaller embedding dimension
+                #embeddings = OllamaEmbeddings(model="llama3")  # Smaller embedding dimension
+                embeddings = HuggingFaceEmbeddings(
+                            model_name="sentence-transformers/all-MiniLM-L6-v2",
+                            model_kwargs={'device': 'cpu'},
+                            encode_kwargs={'normalize_embeddings': True}
+                        )
             except Exception as e:
-                logger.warning(f"Failed to initialize Ollama embeddings: {e}. Falling back to HuggingFace.")
-                embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")  # Lighter model
+                logger.warning(f"Failed to initialize Huggingface embeddings: {e}.")
+                #embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")  # Lighter model
             
             # Use in-memory store for small documents, persistent for larger ones
             doc_id = os.path.basename(document_path).replace('.pdf', '')
@@ -402,29 +407,8 @@ class QueryEngine:
         # Initialize LLM clients
         self.setup_llm_clients()
     
-    def setup_llm_clients(self):
-        """Set up LLM clients for querying"""
-        try:
-            # Check which provider is configured
-            if self.config.model_provider == "ollama":
-                try:
-                    # Initialize Ollama client
-                    self.ollama = OllamaLLM(model=self.config.model_to_use)
-                    logger.info(f"Initialized Ollama with model {self.config.model_to_use}")
-                except Exception as e:
-                    logger.error(f"Error initializing Ollama: {e}")
-                    logger.warning("Falling back to Gemini for all operations")
-                    self.config.model_provider = "gemini"
-            
-            # Always initialize Gemini client (used for PDF processing regardless of provider)
-            self.gemini = ChatGoogleGenerativeAI(model=self.config.gemini_model)
-            logger.info(f"Initialized Gemini client with model {self.config.gemini_model}")
-        except Exception as e:
-            logger.error(f"Error initializing LLM clients: {e}")
-    
-    
-    def query_document(self, document_path: str, prompt: str, use_rag: bool = True):
-        """Query a document with a given prompt"""
+    def query_document(self, document_path: str, prompt: str, use_rag: bool = True, return_chunks: bool = False):
+        """Query a document with a given prompt, optionally returning chunks for guardrail validation"""
         logger.info(f"Querying document {document_path} with prompt: {prompt}")
         
         try:
@@ -434,43 +418,54 @@ class QueryEngine:
                 logger.info(f"Using direct method as configured, bypassing RAG")
                 result = self._query_with_gemini(document_path, prompt)
                 if result and len(result.strip()) > 0:
-                    return result
+                    # Return result and None for chunks since direct method doesn't use RAG
+                    return (result, None) if return_chunks else result
                     
                 # If that fails, try ChatPDF as final fallback
                 if self.config.CHATPDF_API_KEY:
                     result = self._query_with_chatpdf(document_path, prompt)
-                    return result
+                    return (result, None) if return_chunks else result
                     
-                return "Unable to process document query with direct method."
+                fallback_result = "Unable to process document query with direct method."
+                return (fallback_result, None) if return_chunks else fallback_result
                 
             # For non-direct methods, proceed with RAG if enabled
             if use_rag:
-                result = self._query_with_rag(document_path, prompt)
+                rag_result = self._query_with_rag(document_path, prompt, return_chunks=return_chunks)
+                
+                if return_chunks:
+                    result, top_chunks = rag_result if isinstance(rag_result, tuple) else (rag_result, None)
+                else:
+                    result = rag_result
+                    top_chunks = None
+                
                 if result and len(result.strip()) > 0:
-                    return result
+                    return (result, top_chunks) if return_chunks else result
             
             # Fallback to direct Gemini query
             result = self._query_with_gemini(document_path, prompt)
             if result and len(result.strip()) > 0:
-                return result
+                return (result, None) if return_chunks else result
             
             # Final fallback to ChatPDF if configured
             if self.config.CHATPDF_API_KEY:
                 result = self._query_with_chatpdf(document_path, prompt)
-                return result
+                return (result, None) if return_chunks else result
                 
-            return "Unable to process document query."
+            fallback_result = "Unable to process document query."
+            return (fallback_result, None) if return_chunks else fallback_result
         except Exception as e:
             logger.error(f"Error querying document: {e}")
-            return f"Error querying document: {str(e)}"
-        
-    def _query_with_rag(self, document_path, prompt):
-        """Query using optimized hybrid RAG with PDF slices"""
+            error_result = f"Error querying document: {str(e)}"
+            return (error_result, None) if return_chunks else error_result
+    
+    def _query_with_rag(self, document_path, prompt, return_chunks=False):
+        """Query using optimized hybrid RAG with PDF slices, optionally returning chunks"""
         try:
             # Check if we're using direct method
             if self.config.retrieval_method.lower() == "direct":
                 logger.info(f"Direct method specified. Bypassing RAG for {document_path}")
-                return None  # Signal caller to use direct method instead
+                return (None, None) if return_chunks else None
                 
             # Store the current document path for fallback
             self.current_document_path = document_path
@@ -490,12 +485,13 @@ class QueryEngine:
             retriever = retriever_cache[document_path]
             if not retriever:
                 logger.warning(f"No retriever available for {document_path}")
-                return None
+                return (None, None) if return_chunks else None
             
             # Get relevant documents using the modern API
             try:
                 # First try the new invoke method
                 top_chunks = retriever.invoke(prompt)
+                print(f"Top chunks retrieved: {len(top_chunks)} for sending to gemini")
             except (AttributeError, TypeError):
                 # Fall back to the legacy method if needed
                 logger.warning("Falling back to legacy get_relevant_documents method")
@@ -509,7 +505,7 @@ class QueryEngine:
                         top_chunks = chunks_cache[document_path][:5]  # Use first 5 chunks
                     else:
                         logger.error("No chunks available for fallback")
-                        return None
+                        return (None, None) if return_chunks else None
             
             if not top_chunks:
                 logger.warning(f"No relevant chunks found for query in {document_path}")
@@ -519,7 +515,7 @@ class QueryEngine:
                     logger.info("Using first few chunks as fallback since no relevant chunks found")
                     top_chunks = chunks_cache[document_path][:5]  # Use first 5 chunks as fallback
                 else:
-                    return None
+                    return (None, None) if return_chunks else None
             
             # Limit to at most 10 chunks to keep processing time reasonable
             if len(top_chunks) > 10:
@@ -527,15 +523,43 @@ class QueryEngine:
             
             # Query with PDF slices
             result = self.query_with_pdf_slices(prompt, top_chunks)
+            print(f"RAG query result: {result}")
             
             logger.info(f"RAG query completed for {document_path} with {len(top_chunks)} chunks")
-            return result
+            
+            # Return result and chunks if requested
+            if return_chunks:
+                return result, top_chunks
+            else:
+                return result
+                
         except Exception as e:
             logger.error(f"Error in RAG query: {e}")
             import traceback
             logger.error(traceback.format_exc())
-            return None
-    
+            return (None, None) if return_chunks else None
+     
+    def setup_llm_clients(self):
+        """Set up LLM clients for querying"""
+        try:
+            # Check which provider is configured
+            if self.config.model_provider == "ollama":
+                try:
+                    # Initialize Ollama client
+                    self.ollama = OllamaLLM(model=self.config.model_to_use)
+                    logger.info(f"Initialized Ollama with model {self.config.model_to_use}")
+                except Exception as e:
+                    logger.error(f"Error initializing Ollama: {e}")
+                    logger.warning("Falling back to Gemini for all operations")
+                    self.config.model_provider = "gemini"
+            
+            # Always initialize Gemini client (used for PDF processing regardless of provider)
+            self.gemini = ChatGoogleGenerativeAI(model=self.config.gemini_model)
+            logger.info(f"Initialized Gemini client with model {self.config.gemini_model}")
+        except Exception as e:
+            logger.error(f"Error initializing LLM clients: {e}")
+     
+
     def query_gemini_with_pdf(self, pdf_path, prompt, max_size_mb=20, is_temp_file=False):
         """
         Query Gemini with a PDF document and a prompt
@@ -970,7 +994,7 @@ class QueryEngine:
             return f"Error processing document with Gemini. The error was: {str(e)}"
                         
 class GuardrailAgent:
-    """Handles verification of LLM outputs"""
+    """Handles verification of LLM outputs with enhanced context validation"""
     
     def __init__(self, config: CGSConfig):
         self.config = config
@@ -1002,8 +1026,8 @@ class GuardrailAgent:
         else:
             return self.gemini
     
-    def verify_answer_quality(self, query: str, answer: str) -> Dict[str, str]:
-        """Verify if the answer is good quality and has proper citations with robust parsing"""
+    def verify_answer_quality(self, query: str, answer: str, top_chunks=None) -> Dict[str, str]:
+        """Verify if the answer is good quality and has proper citations with enhanced context validation"""
         
         if not hasattr(self, 'gemini'):
             logger.warning("No LLM available for verification, using simplified checks")
@@ -1011,6 +1035,21 @@ class GuardrailAgent:
             got_answer = "no" if "could not process document" in answer.lower() or "error" in answer.lower() else "yes"
             source_mentioned = "yes" if "page" in answer.lower() or "source" in answer.lower() else "no"
             return {"got_answer": got_answer, "source_mentioned": source_mentioned}
+        
+        # Determine if we should use enhanced verification with chunks
+        use_enhanced_verification = (
+            top_chunks is not None and 
+            len(top_chunks) > 0 and 
+            self.config.retrieval_method.lower() != "direct"
+        )
+        
+        if use_enhanced_verification:
+            return self._verify_with_chunk_context(query, answer, top_chunks)
+        else:
+            return self._verify_basic(query, answer)
+    
+    def _verify_basic(self, query: str, answer: str) -> Dict[str, str]:
+        """Basic verification without chunk context (original implementation)"""
         
         # Define the output schema
         class GuardrailOutput(BaseModel):
@@ -1060,97 +1099,11 @@ class GuardrailAgent:
                 format_instructions=custom_format_instructions
             ))
             
-            logger.info("Received guardrail assessment, attempting to parse")
-            
-            # Try multiple parsing approaches
-            try:
-                # Attempt 1: Direct JSON parsing
-                if isinstance(raw_result, str):
-                    # Clean the string to extract just the JSON part
-                    cleaned_result = raw_result.strip()
-                    json_start = cleaned_result.find('{')
-                    json_end = cleaned_result.rfind('}') + 1
-                    
-                    if json_start >= 0 and json_end > json_start:
-                        json_str = cleaned_result[json_start:json_end]
-                        result_dict = json.loads(json_str)
-                    else:
-                        # If no JSON delimiters found, try the whole string
-                        result_dict = json.loads(cleaned_result)
-                elif isinstance(raw_result, dict):
-                    # Already a dictionary
-                    result_dict = raw_result
-                else:
-                    # Try to access as object attributes
-                    result_dict = {
-                        "got_answer": getattr(raw_result, "got_answer", "no"),
-                        "source_mentioned": getattr(raw_result, "source_mentioned", "no")
-                    }
-                    
-                # Normalize values to ensure "yes" or "no"
-                for key in ["got_answer", "source_mentioned"]:
-                    if key not in result_dict:
-                        result_dict[key] = "no"
-                    else:
-                        # Normalize to lowercase yes/no
-                        value = str(result_dict[key]).lower().strip()
-                        if value in ["1", "true", "yes", "y"]:
-                            result_dict[key] = "yes"
-                        else:
-                            result_dict[key] = "no"
-                            
-                logger.info(f"Successfully parsed guardrail result: {result_dict}")
-                return result_dict
-                    
-            except Exception as parsing_error:
-                logger.warning(f"Initial parsing failed: {parsing_error}, trying regex fallback")
-                
-                # Attempt 2: Use regex to extract JSON
-                import re
-                json_pattern = r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}'
-                matches = re.findall(json_pattern, raw_result, re.DOTALL)
-                
-                if matches:
-                    for potential_json in matches:
-                        try:
-                            result_dict = json.loads(potential_json)
-                            if "got_answer" in result_dict or "source_mentioned" in result_dict:
-                                # Normalize values
-                                for key in ["got_answer", "source_mentioned"]:
-                                    if key not in result_dict:
-                                        result_dict[key] = "no"
-                                    else:
-                                        value = str(result_dict[key]).lower().strip()
-                                        result_dict[key] = "yes" if value in ["1", "true", "yes", "y"] else "no"
-                                        
-                                logger.info(f"Regex extraction successful: {result_dict}")
-                                return result_dict
-                        except json.JSONDecodeError:
-                            continue
-                            
-                # Attempt 3: Basic text analysis if JSON extraction failed
-                got_answer = "yes" if any(x in raw_result.lower() for x in [
-                    "provided a substantive answer",
-                    "addresses the query",
-                    "answered the question",
-                    "got_answer\": \"yes",
-                    "got_answer\":\"yes"
-                ]) else "no"
-                
-                source_mentioned = "yes" if any(x in raw_result.lower() for x in [
-                    "includes references",
-                    "cites specific sources",
-                    "page numbers",
-                    "mentions sources",
-                    "source_mentioned\": \"yes",
-                    "source_mentioned\":\"yes"
-                ]) else "no"
-                
-                logger.info(f"Text analysis extraction: got_answer={got_answer}, source_mentioned={source_mentioned}")
-                return {"got_answer": got_answer, "source_mentioned": source_mentioned}
+            logger.info("Received basic guardrail assessment, attempting to parse")
+            return self._parse_guardrail_result(raw_result, answer)
                 
         except Exception as e:
-            logger.error(f"Error in guardrail verification: {e}")
+            logger.error(f"Error in basic guardrail verification: {e}")
                 
         # Simple fallback if all else fails
         got_answer = "no" if "could not process document" in answer.lower() or "error" in answer.lower() else "yes"
@@ -1158,6 +1111,330 @@ class GuardrailAgent:
         
         logger.info(f"Using simple heuristic fallback: got_answer={got_answer}, source_mentioned={source_mentioned}")
         return {"got_answer": got_answer, "source_mentioned": source_mentioned}
+    
+    def _verify_with_chunk_context(self, query: str, answer: str, top_chunks) -> Dict[str, str]:
+        """Enhanced verification using retrieved chunk context"""
+        
+        # Prepare chunk context for the prompt
+        chunk_context = self._prepare_chunk_context(top_chunks)
+        
+        # Define the enhanced output schema
+        class EnhancedGuardrailOutput(BaseModel):
+            got_answer: str = Field(description="Whether the LLM provided a substantive answer to the query (yes/no)")
+            source_mentioned: str = Field(description="Whether the answer mentions page numbers or specific sections (yes/no)")
+            answer_grounded: str = Field(description="Whether the answer is well-grounded in the provided source chunks (yes/no)")
+            relevance_score: str = Field(description="How relevant is the answer to the query (high/medium/low)")
+            
+        # Create custom format instructions
+        custom_format_instructions = """
+        You must respond with a valid JSON object using exactly this format:
+        {
+            "got_answer": "<yes_or_no>",
+            "source_mentioned": "<yes_or_no>",
+            "answer_grounded": "<yes_or_no>",
+            "relevance_score": "<high_medium_or_low>"
+        }
+        
+        - got_answer and source_mentioned and answer_grounded must be either "yes" or "no" (lowercase)
+        - relevance_score must be either "high", "medium", or "low" (lowercase)
+        Do not include any other text, explanation, or formatting outside of this JSON object.
+        """
+        
+        # Create the enhanced prompt
+        prompt = ChatPromptTemplate.from_template(
+            """
+            You are an expert document analysis quality assessor. Your job is to evaluate whether an LLM's answer is appropriate given the source material.
+            
+            ORIGINAL QUERY: {query}
+            
+            LLM'S ANSWER: {answer}
+            
+            RETRIEVED SOURCE CHUNKS:
+            {chunk_context}
+            
+            Evaluate the LLM's answer based on these criteria:
+            
+            1. **got_answer**: Did the LLM provide a substantive, meaningful answer to the query (not just "I don't know" or error messages)?
+            
+            2. **source_mentioned**: Does the answer include specific references to page numbers, sections, or document sources?
+            
+            3. **answer_grounded**: Is the answer well-supported by the information in the retrieved chunks? Look for:
+               - Claims made in the answer that can be verified in the source chunks
+               - Whether the answer goes beyond what's available in the chunks (potential hallucination)
+               - Whether key facts mentioned align with the source material
+               - Unless you think the answer is completely off-tack, you can consider it grounded.
+            
+            4. **relevance_score**: How well does the answer address the specific query?
+               - "high": Directly and comprehensively answers the question
+               - "medium": Partially answers or provides related information
+               - "low": Doesn't really address the query or provides irrelevant information
+            
+            Be strict in your evaluation. If the answer makes claims not supported by the chunks, mark answer_grounded as "no".
+            
+            {format_instructions}
+            """
+        )
+        
+        try:
+            # Get the appropriate LLM
+            llm = self.get_guardrail_llm()
+            
+            # Run the enhanced verification
+            raw_result = llm.invoke(prompt.format(
+                query=query,
+                answer=answer,
+                chunk_context=chunk_context,
+                format_instructions=custom_format_instructions
+            ))
+            
+            logger.info("Received enhanced guardrail assessment with chunk context")
+            
+            # Parse the enhanced result
+            result = self._parse_enhanced_guardrail_result(raw_result, answer)
+            
+            # Log the enhanced assessment
+            logger.info(f"Enhanced guardrail result: {result}")
+            
+            return result
+                
+        except Exception as e:
+            logger.error(f"Error in enhanced guardrail verification: {e}")
+            # Fall back to basic verification
+            logger.info("Falling back to basic verification due to enhanced verification error")
+            return self._verify_basic(query, answer)
+    
+    def _prepare_chunk_context(self, top_chunks, max_chunks=5, max_chars_per_chunk=300):
+        """Prepare a concise context summary from top chunks"""
+        
+        if not top_chunks:
+            return "No source chunks available."
+        
+        context_parts = []
+        
+        # Limit the number of chunks to avoid token limits
+        chunks_to_use = top_chunks[:max_chunks]
+        
+        for i, chunk in enumerate(chunks_to_use):
+            chunk_info = f"**Chunk {i+1}:**\n"
+            
+            # Add metadata if available
+            if hasattr(chunk, 'metadata') and chunk.metadata:
+                metadata = chunk.metadata
+                if 'page' in metadata:
+                    chunk_info += f"- Page: {metadata['page']}\n"
+                if 'source' in metadata:
+                    chunk_info += f"- Source: {metadata['source']}\n"
+                if 'file_path' in metadata:
+                    chunk_info += f"- File: {os.path.basename(metadata['file_path'])}\n"
+            
+            # Add content (truncated if necessary)
+            content = chunk.page_content if hasattr(chunk, 'page_content') else str(chunk)
+            if len(content) > max_chars_per_chunk:
+                content = content[:max_chars_per_chunk] + "..."
+            
+            chunk_info += f"- Content: {content}\n\n"
+            context_parts.append(chunk_info)
+        
+        return "".join(context_parts)
+    
+    def _parse_enhanced_guardrail_result(self, raw_result, answer):
+        """Parse enhanced guardrail result with fallback to basic fields"""
+        
+        try:
+            # Try multiple parsing approaches (similar to existing logic)
+            if hasattr(raw_result, 'content') and isinstance(raw_result.content, str):
+                message_content = raw_result.content
+                logger.info(f"Parsing enhanced guardrail from AIMessage content")
+                
+                # Try to extract JSON from the content
+                import re
+                json_pattern = r'\{.*\}'
+                json_match = re.search(json_pattern, message_content, re.DOTALL)
+                
+                if json_match:
+                    try:
+                        result_dict = json.loads(json_match.group())
+                        logger.info("Successfully parsed enhanced JSON from AIMessage")
+                    except json.JSONDecodeError:
+                        logger.warning("Failed to parse enhanced JSON, extracting fields separately")
+                        # Extract each field separately
+                        result_dict = self._extract_fields_from_text(message_content)
+                else:
+                    logger.warning("No JSON found in enhanced AIMessage content")
+                    result_dict = self._extract_fields_from_text(message_content)
+            
+            elif isinstance(raw_result, str):
+                # Handle string responses
+                json_start = raw_result.find('{')
+                json_end = raw_result.rfind('}') + 1
+                
+                if json_start >= 0 and json_end > json_start:
+                    json_str = raw_result[json_start:json_end]
+                    result_dict = json.loads(json_str)
+                else:
+                    result_dict = self._extract_fields_from_text(raw_result)
+            
+            elif isinstance(raw_result, dict):
+                result_dict = raw_result
+            else:
+                result_dict = self._extract_fields_from_text(str(raw_result))
+            
+            # Ensure all required fields are present with defaults
+            enhanced_result = {
+                "got_answer": self._normalize_yes_no(result_dict.get("got_answer", "no")),
+                "source_mentioned": self._normalize_yes_no(result_dict.get("source_mentioned", "no")),
+                "answer_grounded": self._normalize_yes_no(result_dict.get("answer_grounded", "no")),
+                "relevance_score": self._normalize_relevance(result_dict.get("relevance_score", "low"))
+            }
+            
+            return enhanced_result
+            
+        except Exception as e:
+            logger.error(f"Error parsing enhanced guardrail result: {e}")
+            # Fallback to basic assessment
+            got_answer = "no" if "could not process document" in answer.lower() or "error" in answer.lower() else "yes"
+            source_mentioned = "yes" if "page" in answer.lower() or "source" in answer.lower() else "no"
+            
+            return {
+                "got_answer": got_answer,
+                "source_mentioned": source_mentioned,
+                "answer_grounded": "no",  # Conservative default
+                "relevance_score": "low"  # Conservative default
+            }
+    
+    def _extract_fields_from_text(self, text):
+        """Extract fields from text using regex patterns"""
+        import re
+        
+        result_dict = {}
+        
+        # Extract each field
+        patterns = {
+            "got_answer": r'"got_answer"\s*:\s*"([^"]*)"',
+            "source_mentioned": r'"source_mentioned"\s*:\s*"([^"]*)"', 
+            "answer_grounded": r'"answer_grounded"\s*:\s*"([^"]*)"',
+            "relevance_score": r'"relevance_score"\s*:\s*"([^"]*)"'
+        }
+        
+        for field, pattern in patterns.items():
+            match = re.search(pattern, text)
+            if match:
+                result_dict[field] = match.group(1)
+        
+        return result_dict
+    
+    def _normalize_yes_no(self, value):
+        """Normalize a value to 'yes' or 'no'"""
+        if not value:
+            return "no"
+        
+        value_str = str(value).lower().strip()
+        if value_str in ["1", "true", "yes", "y"]:
+            return "yes"
+        else:
+            return "no"
+    
+    def _normalize_relevance(self, value):
+        """Normalize relevance score to 'high', 'medium', or 'low'"""
+        if not value:
+            return "low"
+        
+        value_str = str(value).lower().strip()
+        if value_str in ["high", "h"]:
+            return "high"
+        elif value_str in ["medium", "med", "m"]:
+            return "medium"
+        else:
+            return "low"
+    
+    def _parse_guardrail_result(self, raw_result, answer):
+        """Parse basic guardrail result (existing implementation)"""
+        
+        try:
+            # Try multiple parsing approaches
+            if isinstance(raw_result, str):
+                # Clean the string to extract just the JSON part
+                cleaned_result = raw_result.strip()
+                json_start = cleaned_result.find('{')
+                json_end = cleaned_result.rfind('}') + 1
+                
+                if json_start >= 0 and json_end > json_start:
+                    json_str = cleaned_result[json_start:json_end]
+                    result_dict = json.loads(json_str)
+                else:
+                    # If no JSON delimiters found, try the whole string
+                    result_dict = json.loads(cleaned_result)
+            elif isinstance(raw_result, dict):
+                # Already a dictionary
+                result_dict = raw_result
+            else:
+                # Try to access as object attributes
+                result_dict = {
+                    "got_answer": getattr(raw_result, "got_answer", "no"),
+                    "source_mentioned": getattr(raw_result, "source_mentioned", "no")
+                }
+                
+            # Normalize values to ensure "yes" or "no"
+            for key in ["got_answer", "source_mentioned"]:
+                if key not in result_dict:
+                    result_dict[key] = "no"
+                else:
+                    # Normalize to lowercase yes/no
+                    value = str(result_dict[key]).lower().strip()
+                    if value in ["1", "true", "yes", "y"]:
+                        result_dict[key] = "yes"
+                    else:
+                        result_dict[key] = "no"
+                        
+            logger.info(f"Successfully parsed basic guardrail result: {result_dict}")
+            return result_dict
+                
+        except Exception as parsing_error:
+            logger.warning(f"Basic parsing failed: {parsing_error}, trying regex fallback")
+            
+            # Attempt regex fallback
+            import re
+            json_pattern = r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}'
+            matches = re.findall(json_pattern, str(raw_result), re.DOTALL)
+            
+            if matches:
+                for potential_json in matches:
+                    try:
+                        result_dict = json.loads(potential_json)
+                        if "got_answer" in result_dict or "source_mentioned" in result_dict:
+                            # Normalize values
+                            for key in ["got_answer", "source_mentioned"]:
+                                if key not in result_dict:
+                                    result_dict[key] = "no"
+                                else:
+                                    value = str(result_dict[key]).lower().strip()
+                                    result_dict[key] = "yes" if value in ["1", "true", "yes", "y"] else "no"
+                                    
+                            logger.info(f"Regex extraction successful: {result_dict}")
+                            return result_dict
+                    except json.JSONDecodeError:
+                        continue
+                        
+            # Text analysis fallback
+            got_answer = "yes" if any(x in str(raw_result).lower() for x in [
+                "provided a substantive answer",
+                "addresses the query", 
+                "answered the question",
+                "got_answer\": \"yes",
+                "got_answer\":\"yes"
+            ]) else "no"
+            
+            source_mentioned = "yes" if any(x in str(raw_result).lower() for x in [
+                "includes references",
+                "cites specific sources",
+                "page numbers",
+                "mentions sources",
+                "source_mentioned\": \"yes",
+                "source_mentioned\":\"yes"
+            ]) else "no"
+            
+            logger.info(f"Text analysis extraction: got_answer={got_answer}, source_mentioned={source_mentioned}")
+            return {"got_answer": got_answer, "source_mentioned": source_mentioned}
     
     def modify_query(self, original_query: str, answer: str, issue_type: str) -> str:
         """Create a modified query based on issues with the original answer"""
@@ -1181,6 +1458,21 @@ class GuardrailAgent:
             
             Provide only the follow-up question with no additional text or explanation.
             """
+        elif issue_type == "grounding":
+            prompt = f"""
+            Original query was: "{original_query}"
+            
+            The answer was: "{answer}"
+            
+            However, the answer appears to not be well-grounded in the source material or may contain
+            information not supported by the documents. Create a more specific question that asks for
+            information that can be directly found and quoted from the source documents.
+            
+            Remember to use {original_query} as the base question. And only add something to it, when you think it will help ground the answer.
+            Do not completely change the question.
+            
+            Provide only the modified question with no additional text or explanation.
+            """
         else:
             return original_query
             
@@ -1189,7 +1481,7 @@ class GuardrailAgent:
             llm = self.get_guardrail_llm()
             
             modified_query = llm.invoke(prompt)
-            logger.info(f"Modified query: {modified_query}")
+            logger.info(f"Modified query for {issue_type}: {modified_query}")
             return modified_query.strip()
         except Exception as e:
             logger.error(f"Error modifying query: {e}")
@@ -1749,9 +2041,8 @@ class CorporateGovernanceAgent:
         
         return self
     
-
     def process_questions(self, load_all_fresh=False, sr_no_list=None):
-        """Process questions from prompts.csv and get answers"""
+        """Process questions from prompts.csv and get answers with enhanced guardrail validation"""
         logger.info("Processing questions from prompts.csv")
         
         # Load prompts
@@ -1819,6 +2110,35 @@ class CorporateGovernanceAgent:
             for source_path in all_sources:
                 logger.info(f"Processing source: {source_path}")
                 
+                # Get top chunks for guardrail validation (only if not using direct method)
+                top_chunks = None
+                if self.config.retrieval_method.lower() != "direct":
+                    try:
+                        # Get the retriever for this document
+                        retriever = self.query_engine.document_processor.create_retriever(source_path)
+                        if retriever:
+                            # Get relevant chunks using the query
+                            try:
+                                top_chunks = retriever.invoke(message)
+                            except (AttributeError, TypeError):
+                                # Fall back to legacy method
+                                try:
+                                    top_chunks = retriever.get_relevant_documents(message)
+                                except Exception as e:
+                                    logger.warning(f"Could not retrieve chunks for guardrail validation: {e}")
+                                    top_chunks = None
+                            
+                            # Limit chunks for guardrail validation (to avoid token limits)
+                            if top_chunks and len(top_chunks) > 50:
+                                top_chunks = top_chunks[:50]
+                                
+                            logger.info(f"Retrieved {len(top_chunks) if top_chunks else 0} chunks for guardrail validation")
+                        else:
+                            logger.warning(f"Could not create retriever for {source_path}")
+                    except Exception as e:
+                        logger.warning(f"Error getting chunks for guardrail validation: {e}")
+                        top_chunks = None
+                
                 # Query the document
                 result = self.query_engine.query_document(source_path, message)
                 
@@ -1826,30 +2146,62 @@ class CorporateGovernanceAgent:
                     logger.warning(f"No result obtained for {source_path}")
                     result = "Could not process document."
                 
-                # Apply guardrails
+                # Apply enhanced guardrails with chunk context
                 try:
-                    guardrail_result = self.guardrail_agent.verify_answer_quality(message, result)
+                    guardrail_result = self.guardrail_agent.verify_answer_quality(
+                        message, result, top_chunks=top_chunks
+                    )
                     
                     # Convert to string values for consistency
                     if guardrail_result and isinstance(guardrail_result, dict):
                         got_answer = guardrail_result.get('got_answer', 'no')
                         source_mentioned = guardrail_result.get('source_mentioned', 'no')
+                        answer_grounded = guardrail_result.get('answer_grounded', 'no')
+                        relevance_score = guardrail_result.get('relevance_score', 'low')
+                        
+                        # Log enhanced guardrail results
+                        logger.info(f"Enhanced guardrail results - Answer: {got_answer}, Sources: {source_mentioned}, "
+                                f"Grounded: {answer_grounded}, Relevance: {relevance_score}")
                     else:
                         # Handle case where guardrail_result is an object with attributes
                         try:
                             got_answer = getattr(guardrail_result, 'got_answer', 'no')
                             source_mentioned = getattr(guardrail_result, 'source_mentioned', 'no')
+                            answer_grounded = getattr(guardrail_result, 'answer_grounded', 'no')
+                            relevance_score = getattr(guardrail_result, 'relevance_score', 'low')
                         except:
                             got_answer = 'no'
                             source_mentioned = 'no'
+                            answer_grounded = 'no'
+                            relevance_score = 'low'
                 except Exception as e:
-                    logger.error(f"Error in guardrail verification: {e}")
+                    logger.error(f"Error in enhanced guardrail verification: {e}")
                     # Fallback to simple checks if guardrail fails
                     got_answer = "no" if "could not process document" in result.lower() or "error" in result.lower() else "yes"
                     source_mentioned = "yes" if "page" in result.lower() or "source" in result.lower() else "no"
+                    answer_grounded = "no"  # Conservative default
+                    relevance_score = "low"  # Conservative default
+                
+                # Try to improve answer based on enhanced guardrail feedback
+                improvement_needed = False
+                
+                # Check if answer needs improvement (prioritize grounding issues)
+                if answer_grounded == 'no' and got_answer == 'yes':
+                    try:
+                        # Address grounding issues first
+                        modified_query = self.guardrail_agent.modify_query(message, result, "grounding")
+                        logger.info(f"Modified query for better grounding: {modified_query}")
+                        
+                        # Query again with modified query
+                        result_attempt2 = self.query_engine.query_document(source_path, modified_query)
+                        if result_attempt2:
+                            result = result + "\n\n[Follow-up for better grounding]: " + result_attempt2
+                            improvement_needed = True
+                    except Exception as e:
+                        logger.error(f"Error in follow-up query for better grounding: {e}")
                 
                 # Try to improve answer if needed
-                if got_answer == 'no':
+                elif got_answer == 'no':
                     try:
                         # Modify the query to try to get a better answer
                         modified_query = self.guardrail_agent.modify_query(message, result, "answer")
@@ -1858,12 +2210,13 @@ class CorporateGovernanceAgent:
                         # Query again with modified query
                         result_attempt2 = self.query_engine.query_document(source_path, modified_query)
                         if result_attempt2:
-                            result = result + "\n\n" + result_attempt2
+                            result = result + "\n\n[Follow-up for better answer]: " + result_attempt2
+                            improvement_needed = True
                     except Exception as e:
                         logger.error(f"Error in follow-up query for better answer: {e}")
                 
                 # Try to get source references if missing
-                if source_mentioned == 'no':
+                elif source_mentioned == 'no' and not improvement_needed:
                     try:
                         # Modify the query to try to get source references
                         modified_query = self.guardrail_agent.modify_query(message, result, "source")
@@ -1872,12 +2225,21 @@ class CorporateGovernanceAgent:
                         # Query again with modified query
                         result_attempt2 = self.query_engine.query_document(source_path, modified_query)
                         if result_attempt2:
-                            result = result + "\n\n" + result_attempt2
+                            result = result + "\n\n[Follow-up for source references]: " + result_attempt2
                     except Exception as e:
                         logger.error(f"Error in follow-up query for source references: {e}")
                 
-                # Save result
+                # Save result with enhanced metadata
                 run_time_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                # Create enhanced result entry with guardrail metadata
+                enhanced_result = result
+                if 'answer_grounded' in locals() and 'relevance_score' in locals():
+                    # Add guardrail assessment as metadata in the result
+                    guardrail_summary = f"\n\n[Guardrail Assessment - Grounded: {answer_grounded}, Relevance: {relevance_score}]"
+                    enhanced_result = result + guardrail_summary
+                    print(f"Enhanced result with guardrail summary: {enhanced_result[:200]}...")  # Log first 200 chars
+                
                 new_row = pd.DataFrame({
                     'run_time_stamp': [run_time_stamp],
                     'sr_no': [sr_no],
@@ -1885,7 +2247,7 @@ class CorporateGovernanceAgent:
                     'que_no': [que_no],
                     'source': [source_filter],
                     'message': [message],
-                    'result': [result]
+                    'result': [enhanced_result]
                 })
                 
                 # Append to results
@@ -1894,93 +2256,14 @@ class CorporateGovernanceAgent:
                 # Save incrementally
                 try:
                     results_df.to_csv(results_path, index=False)
-                    logger.info(f"Saved result for question {que_no}, source {os.path.basename(source_path)}")
+                    logger.info(f"Saved result for question {que_no}, source {os.path.basename(source_path)}, saved at {results_path}")
                 except Exception as e:
                     logger.error(f"Error saving results to CSV: {e}")
         
+        logger.info("Completed processing all questions with enhanced guardrail validation")
         return results_df
     
-    # def score_topic(self, topic_no):
-    #     """Score a specific topic with enhanced logging"""
-    #     try:
-    #         logger.info(f"Scoring topic {topic_no}")
-            
-    #         # Get the current model provider for logging
-    #         model_provider = "unknown"
-    #         if hasattr(self.config, 'model_provider'):
-    #             model_provider = self.config.model_provider
-            
-    #         # Add detailed logging before scoring
-    #         logger.info(f"Using provider: {model_provider}")
-            
-    #         # Get content for the topic - this is a critical part
-    #         content, cat = self._get_topic_content(topic_no)
-            
-    #         # Log content length for debugging
-    #         content_length = len(content) if content else 0
-    #         logger.info(f"Topic {topic_no} content length: {content_length} characters")
-            
-    #         if not content or content_length < 10:  # Arbitrary small threshold
-    #             logger.warning(f"Content for topic {topic_no} is empty or very short. This may cause scoring issues.")
-            
-    #         # Get scoring criteria
-    #         criteria_path = os.path.join(self.config.parent_path, 'scoring_creteria.csv')
-    #         if os.path.exists(criteria_path):
-    #             try:
-    #                 sc_df = pd.read_csv(criteria_path)
-    #                 topic_criteria = sc_df[sc_df['topic_no'] == topic_no]
-    #                 if topic_criteria.empty:
-    #                     logger.error(f"No scoring criteria found for topic {topic_no}")
-    #                     return None
-    #                 scoring_criteria = topic_criteria['scoring_criteria'].iloc[0]
-                    
-    #                 # Log criteria length for debugging
-    #                 criteria_length = len(scoring_criteria) if scoring_criteria else 0
-    #                 logger.info(f"Topic {topic_no} criteria length: {criteria_length} characters")
-                    
-    #                 if not scoring_criteria or criteria_length < 10:  # Arbitrary small threshold
-    #                     logger.warning(f"Scoring criteria for topic {topic_no} is empty or very short.")
-    #             except Exception as e:
-    #                 logger.error(f"Error reading scoring criteria: {e}")
-    #                 return None
-    #         else:
-    #             logger.error(f"Scoring criteria file not found: {criteria_path}")
-    #             return None
-            
-    #         # Apply any special post-processing
-    #         if content and content.strip():
-    #             content = self.scoring_agent.postprocess_content(topic_no, content)
-            
-    #         # Score the content - add more logging
-    #         logger.info(f"Sending topic {topic_no} to model for scoring (provider: {model_provider})")
-            
-    #         # Log sample of content and criteria (first 200 chars)
-    #         content_sample = content[:200] + "..." if content and len(content) > 200 else content
-    #         criteria_sample = scoring_criteria[:200] + "..." if scoring_criteria and len(scoring_criteria) > 200 else scoring_criteria
-    #         logger.info(f"Content sample: {content_sample}")
-    #         logger.info(f"Criteria sample: {criteria_sample}")
-            
-    #         # Score the content
-    #         score_result = self.scoring_agent.score_answer(scoring_criteria, content)
-            
-    #         # Save the score
-    #         score = score_result.get('score', 0)
-    #         justification = score_result.get('justification', 'No justification provided')
-    #         logger.info(f"Score result: {score} with justification length: {len(justification)}")
-            
-    #         # Log justification sample
-    #         justification_sample = justification[:200] + "..." if justification and len(justification) > 200 else justification
-    #         logger.info(f"Justification sample: {justification_sample}")
-            
-    #         self._save_score(topic_no, cat, score, justification)
-            
-    #         return score_result
-    #     except Exception as e:
-    #         logger.error(f"Error scoring topic: {e}")
-    #         import traceback
-    #         logger.error(f"Scoring error traceback: {traceback.format_exc()}")
-    #         return None
-    
+           
     def score_topic(self, topic_no):
         """Score a specific topic with enhanced logging including full model responses"""
         try:
