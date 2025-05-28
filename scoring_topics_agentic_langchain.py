@@ -2632,7 +2632,7 @@ class GovernanceAgentCreator:
         
         return agent_executor
 
-def main():
+def old_main():
     """Main function to demonstrate the usage of the Corporate Governance Agent"""
     
     # Parse command line arguments
@@ -2723,6 +2723,342 @@ def create_master_agent(company_sym):
     
     return master_agent
 
+
+def aggregate_all_companies(base_parent_path):
+    """Standalone function to aggregate results from all companies"""
+    
+    logger.info(f"Starting aggregation for all companies in: {base_parent_path}")
+    
+    try:
+        # Validate base path exists
+        if not os.path.exists(base_parent_path):
+            logger.error(f"Base path does not exist: {base_parent_path}")
+            return None, None
+        
+        # Get all company directories (exclude the results directory and any hidden folders)
+        all_companies = []
+        for item in os.scandir(base_parent_path):
+            if (item.is_dir() and 
+                not item.name.startswith('.') and 
+                item.name != '95_all_results' and
+                not item.name.startswith('__')):
+                all_companies.append(item.name)
+        
+        if not all_companies:
+            logger.warning(f"No company directories found in: {base_parent_path}")
+            return None, None
+        
+        logger.info(f"Found {len(all_companies)} company directories: {all_companies}")
+        
+        # Create output directory
+        output_dir = os.path.join(base_parent_path, '95_all_results')
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Initialize DataFrames for aggregation
+        all_prompt_results = pd.DataFrame()
+        all_que_results = pd.DataFrame()
+        
+        # Track statistics
+        companies_with_prompts = 0
+        companies_with_scores = 0
+        total_prompt_records = 0
+        total_score_records = 0
+        
+        # Process each company
+        for company in all_companies:
+            logger.info(f"Processing company: {company}")
+            
+            # Aggregate prompt results (question-answer pairs)
+            prompt_result_path = os.path.join(base_parent_path, company, '96_results', 'prompts_result.csv')
+            if os.path.exists(prompt_result_path):
+                try:
+                    company_results = pd.read_csv(prompt_result_path)
+                    
+                    # Add company identifier if not already present
+                    if 'company' not in company_results.columns:
+                        company_results['company'] = company
+                    
+                    # Ensure consistent column order
+                    expected_prompt_columns = ['run_time_stamp', 'company', 'sr_no', 'cat', 'que_no', 'source', 'message', 'result']
+                    for col in expected_prompt_columns:
+                        if col not in company_results.columns:
+                            company_results[col] = None
+                    
+                    company_results = company_results[expected_prompt_columns]
+                    all_prompt_results = pd.concat([all_prompt_results, company_results], ignore_index=True)
+                    
+                    companies_with_prompts += 1
+                    total_prompt_records += len(company_results)
+                    logger.info(f"  - Added {len(company_results)} prompt results from {company}")
+                    
+                except Exception as e:
+                    logger.error(f"  - Error reading prompt results for {company}: {e}")
+            else:
+                logger.warning(f"  - No prompt results found for {company}: {prompt_result_path}")
+            
+            # Aggregate question scores (final scores)
+            que_result_path = os.path.join(base_parent_path, company, '96_results', 'que_wise_scores_final.csv')
+            if os.path.exists(que_result_path):
+                try:
+                    company_scores = pd.read_csv(que_result_path)
+                    
+                    # Add company identifier if not already present
+                    if 'company' not in company_scores.columns:
+                        company_scores['company'] = company
+                    
+                    # Ensure consistent column order
+                    expected_score_columns = ['run_time_stamp', 'company', 'category', 'que_no', 'score', 'justification']
+                    for col in expected_score_columns:
+                        if col not in company_scores.columns:
+                            company_scores[col] = None
+                    
+                    company_scores = company_scores[expected_score_columns]
+                    all_que_results = pd.concat([all_que_results, company_scores], ignore_index=True)
+                    
+                    companies_with_scores += 1
+                    total_score_records += len(company_scores)
+                    logger.info(f"  - Added {len(company_scores)} score results from {company}")
+                    
+                except Exception as e:
+                    logger.error(f"  - Error reading score results for {company}: {e}")
+            else:
+                logger.warning(f"  - No score results found for {company}: {que_result_path}")
+        
+        # Save aggregated results
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # Save prompt results
+        if not all_prompt_results.empty:
+            prompt_output_path = os.path.join(output_dir, 'all_prompt_results.csv')
+            prompt_backup_path = os.path.join(output_dir, f'all_prompt_results_backup_{timestamp}.csv')
+            
+            # Create backup if file exists
+            if os.path.exists(prompt_output_path):
+                try:
+                    existing_df = pd.read_csv(prompt_output_path)
+                    existing_df.to_csv(prompt_backup_path, index=False)
+                    logger.info(f"Created backup of existing prompt results: {prompt_backup_path}")
+                except Exception as e:
+                    logger.warning(f"Could not create backup: {e}")
+            
+            # Save new aggregated results
+            all_prompt_results.to_csv(prompt_output_path, index=False)
+            logger.info(f"Saved aggregated prompt results to: {prompt_output_path}")
+            logger.info(f"Total prompt records: {len(all_prompt_results)}")
+        else:
+            logger.warning("No prompt results to aggregate")
+        
+        # Save score results  
+        if not all_que_results.empty:
+            score_output_path = os.path.join(output_dir, 'all_question_scores.csv')
+            score_backup_path = os.path.join(output_dir, f'all_question_scores_backup_{timestamp}.csv')
+            
+            # Create backup if file exists
+            if os.path.exists(score_output_path):
+                try:
+                    existing_df = pd.read_csv(score_output_path)
+                    existing_df.to_csv(score_backup_path, index=False)
+                    logger.info(f"Created backup of existing score results: {score_backup_path}")
+                except Exception as e:
+                    logger.warning(f"Could not create backup: {e}")
+            
+            # Save new aggregated results
+            all_que_results.to_csv(score_output_path, index=False)
+            logger.info(f"Saved aggregated score results to: {score_output_path}")
+            logger.info(f"Total score records: {len(all_que_results)}")
+        else:
+            logger.warning("No score results to aggregate")
+        
+        # Generate summary report
+        summary_report = generate_aggregation_summary(
+            all_companies, companies_with_prompts, companies_with_scores,
+            total_prompt_records, total_score_records, all_prompt_results, all_que_results
+        )
+        
+        # Save summary report
+        summary_path = os.path.join(output_dir, f'aggregation_summary_{timestamp}.txt')
+        with open(summary_path, 'w') as f:
+            f.write(summary_report)
+        logger.info(f"Saved aggregation summary to: {summary_path}")
+        
+        # Print summary to console
+        print("\n" + "="*60)
+        print("AGGREGATION SUMMARY")
+        print("="*60)
+        print(summary_report)
+        print("="*60)
+        
+        logger.info(f"Successfully aggregated results from {len(all_companies)} companies")
+        return all_prompt_results, all_que_results
+        
+    except Exception as e:
+        logger.error(f"Error in aggregation process: {e}")
+        import traceback
+        logger.error(f"Aggregation error traceback: {traceback.format_exc()}")
+        return None, None
+
+def generate_aggregation_summary(all_companies, companies_with_prompts, companies_with_scores, 
+                               total_prompt_records, total_score_records, all_prompt_results, all_que_results):
+    """Generate a summary report of the aggregation process"""
+    
+    summary = []
+    summary.append(f"Aggregation completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    summary.append("")
+    summary.append("OVERVIEW:")
+    summary.append(f"  - Total companies found: {len(all_companies)}")
+    summary.append(f"  - Companies with prompt results: {companies_with_prompts}")
+    summary.append(f"  - Companies with score results: {companies_with_scores}")
+    summary.append(f"  - Total prompt records: {total_prompt_records}")
+    summary.append(f"  - Total score records: {total_score_records}")
+    summary.append("")
+    
+    summary.append("COMPANIES PROCESSED:")
+    for company in sorted(all_companies):
+        summary.append(f"  - {company}")
+    summary.append("")
+    
+    if not all_prompt_results.empty:
+        summary.append("PROMPT RESULTS ANALYSIS:")
+        # Analyze by category
+        if 'cat' in all_prompt_results.columns:
+            cat_counts = all_prompt_results['cat'].value_counts()
+            summary.append("  Results by category:")
+            for cat, count in cat_counts.items():
+                summary.append(f"    - Category {cat}: {count} records")
+        
+        # Analyze by company
+        if 'company' in all_prompt_results.columns:
+            company_counts = all_prompt_results['company'].value_counts()
+            summary.append("  Results by company:")
+            for company, count in company_counts.items():
+                summary.append(f"    - {company}: {count} records")
+        summary.append("")
+    
+    if not all_que_results.empty:
+        summary.append("SCORE RESULTS ANALYSIS:")
+        # Analyze score distribution
+        if 'score' in all_que_results.columns:
+            score_stats = all_que_results['score'].describe()
+            summary.append("  Score statistics:")
+            summary.append(f"    - Mean score: {score_stats['mean']:.2f}")
+            summary.append(f"    - Median score: {score_stats['50%']:.2f}")
+            summary.append(f"    - Min score: {score_stats['min']:.2f}")
+            summary.append(f"    - Max score: {score_stats['max']:.2f}")
+        
+        # Analyze by category
+        if 'category' in all_que_results.columns:
+            cat_counts = all_que_results['category'].value_counts()
+            summary.append("  Scores by category:")
+            for cat, count in cat_counts.items():
+                summary.append(f"    - Category {cat}: {count} scores")
+        
+        # Analyze by company
+        if 'company' in all_que_results.columns:
+            company_counts = all_que_results['company'].value_counts()
+            summary.append("  Scores by company:")
+            for company, count in company_counts.items():
+                summary.append(f"    - {company}: {count} scores")
+    
+    return "\n".join(summary)
+
+# Update the main function to include the aggregate option
+def main():
+    """Main function to demonstrate the usage of the Corporate Governance Agent"""
+    
+    # Parse command line arguments
+    import argparse
+    parser = argparse.ArgumentParser(description='Corporate Governance Scoring System')
+    parser.add_argument('--company', type=str, help='Company symbol (e.g., PAYTM)')
+    parser.add_argument('--path', type=str, help='Base path for company data')
+    parser.add_argument('--mode', type=str, choices=['setup', 'process', 'score', 'all', 'aggregate'], default='all',
+                      help='Operation mode (setup, process, score, all, or aggregate)')
+    parser.add_argument('--category', type=int, choices=[1, 2, 3, 4], help='Category to score (1-4)')
+    parser.add_argument('--question', type=int, help='Specific question number to process/score')
+    parser.add_argument('--fresh', action='store_true', help='Process all questions from scratch')
+    parser.add_argument('--retrieval', type=str, choices=['hybrid', 'bm25', 'vector', 'direct'], 
+                      default='hybrid', help='Retrieval method to use')
+    parser.add_argument('--parent-path', type=str, help='Parent path containing all company directories (for aggregation)')
+    
+    args = parser.parse_args()
+    
+    print(args)
+    
+    try:
+        # Handle aggregation mode separately
+        if args.mode == 'aggregate':
+            if args.parent_path:
+                parent_path = args.parent_path
+            elif args.path:
+                # If path is provided, use its parent directory
+                parent_path = os.path.dirname(args.path)
+            elif args.company:
+                # Try to infer parent path from company path structure
+                default_company_path = f'/Users/monilshah/Documents/GitHub/AgentEval/{args.company}/'
+                parent_path = os.path.dirname(default_company_path)
+            else:
+                # Use default parent path
+                parent_path = '/Users/monilshah/Documents/GitHub/AgentEval/'
+            
+            logger.info(f"Running aggregation mode with parent path: {parent_path}")
+            all_prompt_results, all_que_results = aggregate_all_companies(parent_path)
+            
+            if all_prompt_results is not None or all_que_results is not None:
+                logger.info("Aggregation completed successfully")
+                return 0
+            else:
+                logger.error("Aggregation failed")
+                return 1
+        
+        # For all other modes, company is required
+        if not args.company:
+            logger.error("Company symbol is required for non-aggregation modes")
+            return 1
+        
+        # Create configuration and set retrieval method
+        config = CGSConfig(args.company)
+        if args.path:
+            config.base_path = args.path
+        
+        # Set the retrieval method from command line argument
+        config.retrieval_method = args.retrieval
+        
+        agent = CorporateGovernanceAgent(args.company, base_path=args.path, config=config)
+        logger.info(f"Agent initialized for company {args.company} with retrieval method: {args.retrieval}")
+        
+        # Determine operation mode
+        if args.mode == 'setup' or args.mode == 'all':
+            agent.setup()
+            logger.info("Setup completed")
+        
+        if args.mode == 'process' or args.mode == 'all':
+            if args.question:
+                agent.process_questions(load_all_fresh=args.fresh, sr_no_list=[args.question])
+                logger.info(f"Processed question {args.question}")
+            else:
+                agent.process_questions(load_all_fresh=args.fresh)
+                logger.info("Processed all questions")
+        
+        if args.mode == 'score' or args.mode == 'all':
+            if args.question:
+                agent.score_topic(args.question)
+                logger.info(f"Scored topic {args.question}")
+            elif args.category:
+                agent.score_category(args.category)
+                logger.info(f"Scored category {args.category}")
+            else:
+                agent.score_all_categories()
+                logger.info("Scored all categories")
+        
+        logger.info("All operations completed successfully")
+        return 0
+    
+    except Exception as e:
+        logger.error(f"Error in main execution: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return 1
+
+
 ## Sample commands to run the script
 
 # # Set up the documents for a company
@@ -2751,6 +3087,17 @@ def create_master_agent(company_sym):
 
 # # Use vector-only retrieval
 # python scoring_topics_agentic_langchain.py --company PAYTM --mode process --question 43 --retrieval vector
+
+
+# # Aggregate all companies in the default parent directory
+# python scoring_topics_agentic_langchain.py --mode aggregate
+
+# # Aggregate with custom parent path
+# python scoring_topics_agentic_langchain.py --mode aggregate --parent-path /path/to/companies/
+
+# # Aggregate using a specific company's path to infer parent
+# python scoring_topics_agentic_langchain.py --mode aggregate --company PAYTM
+
 
 def test_retrieval(company_sym, document_path, query):
     """Test just the retrieval functionality"""
