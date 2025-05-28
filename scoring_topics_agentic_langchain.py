@@ -2632,78 +2632,6 @@ class GovernanceAgentCreator:
         
         return agent_executor
 
-def old_main():
-    """Main function to demonstrate the usage of the Corporate Governance Agent"""
-    
-    # Parse command line arguments
-    import argparse
-    parser = argparse.ArgumentParser(description='Corporate Governance Scoring System')
-    parser.add_argument('--company', type=str, required=True, help='Company symbol (e.g., PAYTM)')
-    parser.add_argument('--path', type=str, help='Base path for company data')
-    parser.add_argument('--mode', type=str, choices=['setup', 'process', 'score', 'all'], default='all',
-                      help='Operation mode (setup, process, score, or all)')
-    parser.add_argument('--category', type=int, choices=[1, 2, 3, 4], help='Category to score (1-4)')
-    parser.add_argument('--question', type=int, help='Specific question number to process/score')
-    parser.add_argument('--fresh', action='store_true', help='Process all questions from scratch')
-    
-    parser.add_argument('--retrieval', type=str, choices=['hybrid', 'bm25', 'vector', 'direct'], 
-                      default='hybrid', help='Retrieval method to use')
-    
-    args = parser.parse_args()
-    
-    print(args)
-    # Initialize the agent
-    try:
-        
-        # Create configuration and set retrieval method
-        config = CGSConfig(args.company)
-        if args.path:
-            config.base_path = args.path
-        
-        # Set the retrieval method from command line argument
-        config.retrieval_method = args.retrieval
-        
-        agent = CorporateGovernanceAgent(args.company, base_path=args.path, config=config)
-        logger.info(f"Agent initialized for company {args.company} with retrieval method: {args.retrieval}")
-        
-        
-        # Determine operation mode
-        if args.mode == 'setup' or args.mode == 'all':
-            agent.setup()
-            logger.info("Setup completed")
-        
-        if args.mode == 'process' or args.mode == 'all':
-            if args.question:
-                agent.process_questions(load_all_fresh=args.fresh, sr_no_list=[args.question])
-                logger.info(f"Processed question {args.question}")
-            else:
-                agent.process_questions(load_all_fresh=args.fresh)
-                logger.info("Processed all questions")
-        
-        if args.mode == 'score' or args.mode == 'all':
-            if args.question:
-                agent.score_topic(args.question)
-                logger.info(f"Scored topic {args.question}")
-            elif args.category:
-                agent.score_category(args.category)
-                logger.info(f"Scored category {args.category}")
-            else:
-                agent.score_all_categories()
-                logger.info("Scored all categories")
-                
-                # Also aggregate results
-                agent.aggregate_results()
-                logger.info("Aggregated results")
-        
-        logger.info("All operations completed successfully")
-        return 0
-    
-    except Exception as e:
-        logger.error(f"Error in main execution: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
-        return 1
-
 # For advanced usage: Create a master agent that can handle complex tasks
 def create_master_agent(company_sym):
     """Create a master agent for complex governance analysis tasks"""
@@ -3059,46 +2987,6 @@ def main():
         return 1
 
 
-## Sample commands to run the script
-
-# # Set up the documents for a company
-# python scoring_topics_agentic_langchain.py --company PAYTM --mode setup
-
-# # Process all questions for a company
-# python scoring_topics_agentic_langchain.py --company PAYTM --mode process
-
-# # Process a specific question
-# python scoring_topics_agentic_langchain.py --company PAYTM --mode process --question 43
-
-# # Score a specific topic
-# python scoring_topics_agentic_langchain.py --company PAYTM --mode score --question 10
-
-# # Score an entire category
-# python scoring_topics_agentic_langchain.py --company PAYTM --mode score --category 1
-
-# # Do everything in one command
-# python scoring_topics_agentic_langchain.py --company PAYTM --mode all    
-
-# # Use BM25-only retrieval
-# python scoring_topics_agentic_langchain.py --company PAYTM --mode process --question 43 --retrieval bm25
-
-# # Use hybrid retrieval (default)
-# python scoring_topics_agentic_langchain.py --company PAYTM --mode process --question 43
-
-# # Use vector-only retrieval
-# python scoring_topics_agentic_langchain.py --company PAYTM --mode process --question 43 --retrieval vector
-
-
-# # Aggregate all companies in the default parent directory
-# python scoring_topics_agentic_langchain.py --mode aggregate
-
-# # Aggregate with custom parent path
-# python scoring_topics_agentic_langchain.py --mode aggregate --parent-path /path/to/companies/
-
-# # Aggregate using a specific company's path to infer parent
-# python scoring_topics_agentic_langchain.py --mode aggregate --company PAYTM
-
-
 def test_retrieval(company_sym, document_path, query):
     """Test just the retrieval functionality"""
     # Initialize configuration
@@ -3185,3 +3073,45 @@ if __name__ == "__main__":
         test_retrieval(company, document_path, query)
         sys.exit(0)
     sys.exit(main())
+    
+    
+
+## Sample commands to run the script
+
+# # Set up the documents for a company
+# python scoring_topics_agentic_langchain.py --company PAYTM --mode setup
+
+# # Process all questions for a company
+# python scoring_topics_agentic_langchain.py --company PAYTM --mode process
+
+# # Process a specific question
+# python scoring_topics_agentic_langchain.py --company PAYTM --mode process --question 43
+
+# # Score a specific topic
+# python scoring_topics_agentic_langchain.py --company PAYTM --mode score --question 10
+
+# # Score an entire category
+# python scoring_topics_agentic_langchain.py --company PAYTM --mode score --category 1
+
+# # Do everything in one command
+# python scoring_topics_agentic_langchain.py --company PAYTM --mode all    
+
+# # Use BM25-only retrieval
+# python scoring_topics_agentic_langchain.py --company PAYTM --mode process --question 43 --retrieval bm25
+
+# # Use hybrid retrieval (default)
+# python scoring_topics_agentic_langchain.py --company PAYTM --mode process --question 43
+
+# # Use vector-only retrieval
+# python scoring_topics_agentic_langchain.py --company PAYTM --mode process --question 43 --retrieval vector
+
+
+# # Aggregate all companies in the default parent directory
+# python scoring_topics_agentic_langchain.py --mode aggregate
+
+# # Aggregate with custom parent path
+# python scoring_topics_agentic_langchain.py --mode aggregate --parent-path /path/to/companies/
+
+# # Aggregate using a specific company's path to infer parent
+# python scoring_topics_agentic_langchain.py --mode aggregate --company PAYTM
+
