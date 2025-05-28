@@ -220,7 +220,7 @@ def get_scoring_criteria():
     try:
         df = pd.read_csv(criteria_path)
         # Return a list of tuples (topic_no, topic_name, category)
-        return [(row['topic_no'], row.get('topic_name', f"Topic {row['topic_no']}"), 
+        return [(row['topic_no'], row.get('topic_name', f"{row['topic_name']}"), 
                  row.get('category', '')) 
                 for _, row in df.iterrows()]
     except Exception as e:
@@ -927,7 +927,7 @@ def main():
                     st.warning("No questions found in prompts.csv")
                 else:
                     # Create a multiselect for questions
-                    question_options = [f"{sr_no}: Q{que_no} ({cat}) - {msg[:50]}..." for sr_no, que_no, cat, msg in questions]
+                    question_options = [f"{sr_no}: Q{que_no} ({cat}) - {msg[:150]}..." for sr_no, que_no, cat, msg in questions]
                     selected_questions = st.multiselect(
                         "Select questions to process:",
                         options=question_options
@@ -1130,7 +1130,7 @@ def main():
                     st.warning("No scoring criteria found")
                 else:
                     # Create a selectbox for topics
-                    topic_options = [f"Topic {topic_no}: {topic_name} ({category})" 
+                    topic_options = [f"Topic {topic_no}: {topic_name} (Category : {category})" 
                                     for topic_no, topic_name, category in topics]
                     selected_topic = st.selectbox(
                         "Select topic to score:",
@@ -1662,7 +1662,7 @@ def main():
     st.markdown("---")
     st.markdown(
         "<div style='text-align: center; padding: 20px; background-color: #f5f5f5; border-radius: 10px; margin-top: 30px;'>"
-        "<p style='font-size: 16px; font-weight: bold; color: #4B5563;'>Made with ♥️ by Monil Shah & Supriya Jadhav</p>"
+        "<p style='font-size: 16px; font-weight: bold; color: #4B5563;'>Made with ♥️ by Team AgentEval</p>"
         "<p style='font-size: 12px; color: #6B7280;'>Corporate Governance Scoring System © 2025</p>"
         "</div>", 
         unsafe_allow_html=True
