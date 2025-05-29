@@ -1565,7 +1565,7 @@ class ScoringAgent:
             return content
     
     # def score_answer(self, scoring_criteria: str, content: str) -> Dict[str, Union[int, str]]:
-    #     """Score the content based on provided criteria with extra debugging for zero scores"""
+    #     """Score the content based on provided criteria with improved handling of AIMessage type"""
         
     #     # Check for empty inputs
     #     if not content or not content.strip():
@@ -1638,66 +1638,138 @@ class ScoringAgent:
     #         logger.info(f"Raw result type: {result_type}")
     #         logger.info(f"Raw result sample: {result_sample}")
             
-    #         # Parse the result
-    #         try:
-    #             # Try to find JSON in the response
-    #             if isinstance(raw_result, str):
-    #                 cleaned_result = raw_result.strip()
-    #                 # Look for JSON object
-    #                 json_start = cleaned_result.find('{')
-    #                 json_end = cleaned_result.rfind('}') + 1
-                    
-    #                 if json_start >= 0 and json_end > json_start:
-    #                     # Extract the JSON part
-    #                     json_str = cleaned_result[json_start:json_end]
-    #                     result_dict = json.loads(json_str)
-    #                     logger.info(f"Successfully extracted and parsed JSON from string response")
-    #                 else:
-    #                     # Try to parse the whole string
-    #                     result_dict = json.loads(cleaned_result)
-    #                     logger.info(f"Parsed entire response as JSON")
-    #             elif isinstance(raw_result, dict):
-    #                 # Already a dictionary
-    #                 result_dict = raw_result
-    #                 logger.info(f"Response was already a dictionary")
-    #             else:
-    #                 # Try to access as object attributes
-    #                 try:
-    #                     result_dict = {
-    #                         "score": getattr(raw_result, "score", 0),
-    #                         "justification": getattr(raw_result, "justification", "No justification provided")
-    #                     }
-    #                     logger.info(f"Extracted score from object attributes")
-    #                 except:
-    #                     logger.warning(f"Could not extract attributes from {result_type} response")
-    #                     result_dict = {"score": 0, "justification": f"Could not parse response of type {result_type}"}
-    #         except Exception as parse_error:
-    #             logger.error(f"Error parsing result: {parse_error}")
-    #             logger.error(f"Problem parsing: {result_sample}")
+    #         # Special handling for AIMessage type (common with Gemini)
+    #         if hasattr(raw_result, 'content') and isinstance(raw_result.content, str):
+    #             # Extract content from AIMessage
+    #             message_content = raw_result.content
                 
-    #             # Last-resort parsing to extract a score
-    #             try:
-    #                 # Try to find a score using regex
-    #                 import re
-    #                 score_pattern = r'"score"\s*:\s*(\d+)'
-    #                 score_match = re.search(score_pattern, str(raw_result))
-                    
-    #                 if score_match:
-    #                     score = int(score_match.group(1))
-    #                     logger.info(f"Extracted score {score} using regex")
-                        
-    #                     # Try to extract justification
-    #                     justification_pattern = r'"justification"\s*:\s*"([^"]*)"'
-    #                     justification_match = re.search(justification_pattern, str(raw_result))
-    #                     justification = justification_match.group(1) if justification_match else "Justification extraction failed"
-                        
-    #                     result_dict = {"score": score, "justification": justification}
+    #             # Log the FULL message content from Gemini
+    #             logger.info(f"=== FULL GEMINI RESPONSE ===")
+    #             logger.info(message_content)
+    #             logger.info(f"=== END GEMINI RESPONSE ===")
+                
+    #             # Look for JSON in the content - often in markdown code blocks with ```json
+    #             import re
+    #             # Try to extract JSON from markdown code blocks
+    #             json_block_pattern = r'```(?:json)?\s*\n(.*?)\n```'
+    #             json_match = re.search(json_block_pattern, message_content, re.DOTALL)
+                
+    #             if json_match:
+    #                 json_str = json_match.group(1).strip()
+    #                 logger.info(f"Extracted JSON from markdown block: {json_str[:100]}...")
+    #                 try:
+    #                     result_dict = json.loads(json_str)
+    #                     logger.info("Successfully parsed JSON from markdown block")
+    #                 except json.JSONDecodeError as je:
+    #                     logger.error(f"JSON decode error from markdown block: {je}")
+    #                     # Fall back to normal JSON extraction
+    #                     json_pattern = r'\{.*\}'
+    #                     json_match = re.search(json_pattern, message_content, re.DOTALL)
+    #                     if json_match:
+    #                         try:
+    #                             result_dict = json.loads(json_match.group())
+    #                             logger.info("Successfully parsed JSON using regex fallback")
+    #                         except json.JSONDecodeError:
+    #                             logger.error("Failed to parse JSON with regex fallback")
+    #                             # Extract score and justification separately
+    #                             score_match = re.search(r'"score"\s*:\s*(\d+)', message_content)
+    #                             justification_match = re.search(r'"justification"\s*:\s*"([^"]*)"', message_content)
+                                
+    #                             score = int(score_match.group(1)) if score_match else 0
+    #                             justification = justification_match.group(1) if justification_match else "No justification found in response"
+                                
+    #                             result_dict = {
+    #                                 "score": score,
+    #                                 "justification": justification
+    #                             }
+    #             else:
+    #                 # Try direct JSON extraction
+    #                 json_pattern = r'\{.*\}'
+    #                 json_match = re.search(json_pattern, message_content, re.DOTALL)
+    #                 if json_match:
+    #                     try:
+    #                         result_dict = json.loads(json_match.group())
+    #                         logger.info("Successfully parsed JSON using regex")
+    #                     except json.JSONDecodeError:
+    #                         # Extract score and justification separately
+    #                         score_match = re.search(r'"score"\s*:\s*(\d+)', message_content)
+    #                         justification_match = re.search(r'"justification"\s*:\s*"(.*?)"', message_content, re.DOTALL)
+                            
+    #                         score = int(score_match.group(1)) if score_match else 0
+    #                         justification = justification_match.group(1) if justification_match else "No justification found in response"
+                            
+    #                         result_dict = {
+    #                             "score": score,
+    #                             "justification": justification
+    #                         }
     #                 else:
-    #                     # Give up and return a default
-    #                     logger.warning("No score found in response, defaulting to 0")
+    #                     logger.warning("No JSON found in AIMessage content")
+    #                     # Create a basic dictionary with entire content as justification
+    #                     result_dict = {
+    #                         "score": 0,
+    #                         "justification": "Could not extract score. Full response: " + message_content[:500]
+    #                     }
+    #         else:
+    #             # Parse the result for other types
+    #             try:
+    #                 # Try to find JSON in the response
+    #                 if isinstance(raw_result, str):
+    #                     cleaned_result = raw_result.strip()
+    #                     # Look for JSON object
+    #                     json_start = cleaned_result.find('{')
+    #                     json_end = cleaned_result.rfind('}') + 1
+                        
+    #                     if json_start >= 0 and json_end > json_start:
+    #                         # Extract the JSON part
+    #                         json_str = cleaned_result[json_start:json_end]
+    #                         result_dict = json.loads(json_str)
+    #                         logger.info(f"Successfully extracted and parsed JSON from string response")
+    #                     else:
+    #                         # Try to parse the whole string
+    #                         result_dict = json.loads(cleaned_result)
+    #                         logger.info(f"Parsed entire response as JSON")
+    #                 elif isinstance(raw_result, dict):
+    #                     # Already a dictionary
+    #                     result_dict = raw_result
+    #                     logger.info(f"Response was already a dictionary")
+    #                 else:
+    #                     # Try to access as object attributes
+    #                     try:
+    #                         result_dict = {
+    #                             "score": getattr(raw_result, "score", 0),
+    #                             "justification": getattr(raw_result, "justification", "No justification provided")
+    #                         }
+    #                         logger.info(f"Extracted score from object attributes")
+    #                     except:
+    #                         logger.warning(f"Could not extract attributes from {result_type} response")
+    #                         result_dict = {"score": 0, "justification": f"Could not parse response of type {result_type}"}
+    #             except Exception as parse_error:
+    #                 logger.error(f"Error parsing result: {parse_error}")
+    #                 logger.error(f"Problem parsing: {result_sample}")
+                    
+    #                 # Last-resort parsing to extract a score
+    #                 try:
+    #                     # Try to find a score using regex
+    #                     import re
+    #                     score_pattern = r'"score"\s*:\s*(\d+)'
+    #                     score_match = re.search(score_pattern, str(raw_result))
+                        
+    #                     if score_match:
+    #                         score = int(score_match.group(1))
+    #                         logger.info(f"Extracted score {score} using regex")
+                            
+    #                         # Try to extract justification
+    #                         justification_pattern = r'"justification"\s*:\s*"([^"]*)"'
+    #                         justification_match = re.search(justification_pattern, str(raw_result))
+    #                         justification = justification_match.group(1) if justification_match else "Justification extraction failed"
+                            
+    #                         result_dict = {"score": score, "justification": justification}
+    #                     else:
+    #                         # Give up and return a default
+    #                         logger.warning("No score found in response, defaulting to 0")
+    #                         result_dict = {"score": 0, "justification": f"Failed to parse response: {parse_error}"}
+    #                 except:
     #                     result_dict = {"score": 0, "justification": f"Failed to parse response: {parse_error}"}
-    #             except:
-    #                 result_dict = {"score": 0, "justification": f"Failed to parse response: {parse_error}"}
             
     #         # Process and validate the result
     #         if "score" not in result_dict:
@@ -1724,7 +1796,8 @@ class ScoringAgent:
     #         # Check for zero score and log details
     #         if result_dict["score"] == 0:
     #             logger.warning("Zero score detected, this might indicate a problem")
-    #             logger.warning(f"Justification for zero score: {result_dict.get('justification', 'None provided')[:200]}...")
+    #             justification_preview = result_dict.get("justification", "None provided")[:200]
+    #             logger.warning(f"Justification for zero score: {justification_preview}...")
                 
     #             # Enhanced justification for zero scores
     #             if "no information" in result_dict.get("justification", "").lower() or "information is missing" in result_dict.get("justification", "").lower():
@@ -1745,7 +1818,7 @@ class ScoringAgent:
     #             "score": 0,
     #             "justification": f"Error in scoring process: {str(e)}"
     #         }
-    
+        
     def score_answer(self, scoring_criteria: str, content: str) -> Dict[str, Union[int, str]]:
         """Score the content based on provided criteria with improved handling of AIMessage type"""
         
@@ -1775,7 +1848,7 @@ class ScoringAgent:
         else:
             logger.info(f"Using Ollama model: {self.config.model_to_use}")
         
-        # Create a modified prompt specifically designed for better Gemini performance
+        # Create a modified prompt that specifically emphasizes source retention
         prompt_template = """
         You are a corporate governance scoring expert. Your task is to evaluate corporate governance based on specific criteria and content.
         
@@ -1786,15 +1859,22 @@ class ScoringAgent:
         {content}
         
         SCORING RULES:
-        - Score from 0 to 10, where 0 means criteria not met at all, and 10 means fully met
-        - If information is missing, score should be 0
-        - Include page numbers and document references in your justification where possible
+        - Score from 0, 1 or 2
+        - When to score 0 ,1 or 2 is described in the scoring criteria
         - Be objective and thorough in your evaluation
         
-        YOUR RESPONSE MUST BE A VALID JSON OBJECT WITH EXACTLY THIS FORMAT:
-        {{"score": <integer_0_to_10>, "justification": "<detailed_explanation>"}}
+        CRITICAL REQUIREMENT FOR JUSTIFICATION:
+        - You MUST preserve and include ALL source information (file names, page numbers, document references) that appear in the content
+        - When referencing information, always cite the specific source (e.g., "From annual_report.pdf page 15" or "Sources: pp. 23-25 (financial_statement.pdf)")
+        - If the content contains citations like "pp. X-Y (filename.pdf)" or "page X", include these EXACTLY in your justification
+        - Your justification should demonstrate traceability back to the original documents
+        - Example good justification: "The company scored 2 because the board independence requirements are clearly stated on page 45 of the annual_report.pdf, showing 6 out of 8 directors are independent as per pp. 45-47 (annual_report.pdf)."
         
-        The score MUST be an integer number between 0 and 10.
+        YOUR RESPONSE MUST BE A VALID JSON OBJECT WITH EXACTLY THIS FORMAT:
+        {{"score": <integer_0_to_2>, "justification": "<detailed_explanation_with_all_source_citations>"}}
+        
+        The score MUST be an integer number between 0 and 2.
+        The justification MUST include specific page numbers and file names when they are available in the content.
         Do not include any text before or after the JSON object.
         """
         
@@ -1892,7 +1972,7 @@ class ScoringAgent:
                             "justification": "Could not extract score. Full response: " + message_content[:500]
                         }
             else:
-                # Parse the result for other types
+                # Parse the result for other types (keeping existing logic)
                 try:
                     # Try to find JSON in the response
                     if isinstance(raw_result, str):
@@ -1989,6 +2069,16 @@ class ScoringAgent:
                 else:
                     logger.warning("Zero score reason is unclear from justification")
             
+            # Log if source information appears to be preserved
+            justification = result_dict.get("justification", "")
+            has_page_refs = "page" in justification.lower() or "pp." in justification.lower()
+            has_file_refs = ".pdf" in justification.lower() or "annual_report" in justification.lower() or "source" in justification.lower()
+            
+            if has_page_refs or has_file_refs:
+                logger.info("Source information appears to be preserved in justification")
+            else:
+                logger.warning("No clear source information found in justification - may need to check source preservation")
+            
             return result_dict
         
         except Exception as e:
@@ -1999,8 +2089,8 @@ class ScoringAgent:
             return {
                 "score": 0,
                 "justification": f"Error in scoring process: {str(e)}"
-            }
-        
+            }    
+
 class CorporateGovernanceAgent:
     """Main agent that orchestrates the entire workflow"""
     
@@ -2353,8 +2443,33 @@ class CorporateGovernanceAgent:
             logger.error(f"Scoring error traceback: {traceback.format_exc()}")
             return None
                 
+    # def _get_topic_content(self, topic_no):
+    #     """Get combined content for a topic from prompts_result.csv"""
+    #     file_path = os.path.join(self.config.results_path, 'prompts_result.csv')
+        
+    #     if not os.path.exists(file_path):
+    #         logger.error(f"Results file not found: {file_path}")
+    #         return None, None
+            
+    #     df = pd.read_csv(file_path)
+        
+    #     # Filter for the topic
+    #     filtered_df = df[df['que_no'] == topic_no]
+        
+    #     if filtered_df.empty:
+    #         logger.warning(f"No results found for topic {topic_no}")
+    #         return None, None
+            
+    #     # Get category
+    #     cat = filtered_df['cat'].iloc[0]
+        
+    #     # Combine all results
+    #     content = '\n\n'.join(filtered_df['result'].dropna().tolist())
+        
+    #     return content, cat
+    
     def _get_topic_content(self, topic_no):
-        """Get combined content for a topic from prompts_result.csv"""
+        """Get combined content for a topic from prompts_result.csv with enhanced source preservation"""
         file_path = os.path.join(self.config.results_path, 'prompts_result.csv')
         
         if not os.path.exists(file_path):
@@ -2373,10 +2488,31 @@ class CorporateGovernanceAgent:
         # Get category
         cat = filtered_df['cat'].iloc[0]
         
-        # Combine all results
-        content = '\n\n'.join(filtered_df['result'].dropna().tolist())
+        # Combine all results with enhanced source information
+        content_parts = []
+        for idx, row in filtered_df.iterrows():
+            result_text = row['result']
+            source = row.get('source', 'Unknown')
+            
+            # Add source header for clarity
+            source_header = f"\n--- SOURCE: {source} ---\n"
+            content_parts.append(source_header + str(result_text))
         
-        return content, cat
+        # Join all content parts
+        content = '\n\n'.join(content_parts)
+        
+        # Add a summary header for the scoring model
+        summary_header = f"""
+        === TOPIC {topic_no} ANALYSIS SUMMARY ===
+        The following content contains information from multiple sources relevant to this topic.
+        Each section is clearly marked with its source. Please preserve all source citations 
+        (page numbers, file names, document references) in your scoring justification.
+
+        """
+        
+        final_content = summary_header + content
+        
+        return final_content, cat
     
     def _save_score(self, topic_no, category, score, justification):
         """Save score to que_wise_scores.csv"""
@@ -3079,6 +3215,7 @@ if __name__ == "__main__":
         test_retrieval(company, document_path, query)
         sys.exit(0)
     sys.exit(main())
+    print("Completed all operations !!!")
     
     
 
