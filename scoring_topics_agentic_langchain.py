@@ -72,6 +72,10 @@ class CGSConfig:
         self.gemini_model = "gemini-1.5-flash"  # For Gemini
         # Alternative: self.model_to_use = 'deepseek-R1'
         
+        self.scoring_temperature = 0.1      # Very deterministic for scoring
+        self.query_temperature = 0.2        # Slightly more flexible for queries
+        self.guardrail_temperature = 0.1 
+        
         # API keys - in a production environment, these should be loaded securely
         self.configure_api_keys()
         
@@ -546,7 +550,7 @@ class QueryEngine:
             if self.config.model_provider == "ollama":
                 try:
                     # Initialize Ollama client
-                    self.ollama = OllamaLLM(model=self.config.model_to_use)
+                    self.ollama = OllamaLLM(model=self.config.model_to_use, temperature=self.config.query_temperature)
                     logger.info(f"Initialized Ollama with model {self.config.model_to_use}")
                 except Exception as e:
                     logger.error(f"Error initializing Ollama: {e}")
@@ -554,7 +558,7 @@ class QueryEngine:
                     self.config.model_provider = "gemini"
             
             # Always initialize Gemini client (used for PDF processing regardless of provider)
-            self.gemini = ChatGoogleGenerativeAI(model=self.config.gemini_model)
+            self.gemini = ChatGoogleGenerativeAI(model=self.config.gemini_model,temperature=self.config.query_temperature)
             logger.info(f"Initialized Gemini client with model {self.config.gemini_model}")
         except Exception as e:
             logger.error(f"Error initializing LLM clients: {e}")
@@ -1003,14 +1007,14 @@ class GuardrailAgent:
         try:
             # Initialize Gemini
             from langchain_google_genai import ChatGoogleGenerativeAI
-            self.gemini = ChatGoogleGenerativeAI(model=config.gemini_model)
+            self.gemini = ChatGoogleGenerativeAI(model=config.gemini_model, temperature=config.guardrail_temperature)
             logger.info(f"Initialized Gemini client with model {config.gemini_model}")
             
             # Initialize Ollama if that's the selected provider
             if config.model_provider == "ollama":
                 try:
                     from langchain_ollama import OllamaLLM
-                    self.ollama = OllamaLLM(model=config.model_to_use)
+                    self.ollama = OllamaLLM(model=config.model_to_use, temperature=config.guardrail_temperature)
                     logger.info(f"Initialized Ollama with model {config.model_to_use}")
                 except Exception as e:
                     logger.error(f"Error initializing Ollama: {e}")
@@ -1047,6 +1051,7 @@ class GuardrailAgent:
             return self._verify_with_chunk_context(query, answer, top_chunks)
         else:
             return self._verify_basic(query, answer)
+    
     
     def _verify_basic(self, query: str, answer: str) -> Dict[str, str]:
         """Basic verification without chunk context (original implementation)"""
@@ -1158,12 +1163,14 @@ class GuardrailAgent:
             
             2. **source_mentioned**: Does the answer include specific references to page numbers, sections, or document sources?
             
-            3. **answer_grounded**: Is the answer well-supported by the information in the retrieved chunks? Look for:
-               - Claims made in the answer that can be verified in the source chunks
-               - Whether the answer goes beyond what's available in the chunks (potential hallucination)
-               - Whether key facts mentioned align with the source material
-               - Unless you think the answer is completely off-tack, you can consider it grounded.
+            3. **answer_grounded**: Does the answer appear to come from the retrieved document chunks?
+            - "yes" = The answer contains information that matches or is consistent with the chunk content
+            - "yes" = The answer discusses topics/entities/numbers that appear in the chunks  
+            - "yes" = Even if not word-for-word, the answer seems based on the source material
+            - "no" = ONLY if the answer is clearly made up or contradicts the chunk content or it says "could not process document" or similar errors
             
+            Be generous - if there's reasonable alignment between answer and chunks, say "yes"
+               
             4. **relevance_score**: How well does the answer address the specific query?
                - "high": Directly and comprehensively answers the question
                - "medium": Partially answers or provides related information
@@ -1496,13 +1503,13 @@ class ScoringAgent:
         # Initialize LLMs based on configuration
         try:
             # Always initialize Gemini as it's needed for various functions
-            self.gemini = ChatGoogleGenerativeAI(model=config.gemini_model)
+            self.gemini = ChatGoogleGenerativeAI(model=config.gemini_model, temperature=config.scoring_temperature)
             logger.info(f"Initialized Gemini client with model {config.gemini_model}")
             
             # Initialize Ollama if that's the selected provider
             if config.model_provider == "ollama":
                 try:
-                    self.ollama = OllamaLLM(model=config.model_to_use)
+                    self.ollama = OllamaLLM(model=config.model_to_use, temperature=config.scoring_temperature)
                     logger.info(f"Initialized Ollama with model {config.model_to_use}")
                 except Exception as e:
                     logger.error(f"Error initializing Ollama: {e}")
@@ -2650,7 +2657,6 @@ def create_master_agent(company_sym):
     )
     
     return master_agent
-
 
 def aggregate_all_companies(base_parent_path):
     """Standalone function to aggregate results from all companies"""
